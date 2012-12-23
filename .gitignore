@@ -1,0 +1,8 @@
+*.o
+*.a
+
+*.tmp
+*.ctmp
+*.rbtmp
+
+gem_mixlib.c

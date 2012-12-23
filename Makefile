@@ -10,3 +10,5 @@ GEM_RB_FILES := $(wildcard $(MRB_DIR)/*.rb)
 gem-all : $(GEM_OBJECTS) gem-c-and-rb-files
 
 gem-clean : gem-clean-c-and-rb-files
+
+gem-test : gem-test-c-and-rb-files

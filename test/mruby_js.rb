@@ -3,5 +3,5 @@ assert('mruby-js test 1') do
 end
 
 assert('mruby-js test 2') do
-  MrubyJs.respond_to? :call_js
+  MrubyJs.respond_to? :call
 end

@@ -109,11 +109,49 @@ mergeInto(LibraryManager.library, {
     }
   },
 
-  js_call__deps: ['__js_fill_return_arg', '__js_fetch_field', '__js_fetch_object'],
-  js_call: function (mrb, handle, name_p, argv_p, argc, ret_p, ret_allow_object) {
+  __js_call_using_new: function (func, args) {
+    // This function uses "new" operator to call JavaScript functions.
+    // It is implemented in the following way for two reasons:
+    // 1. Function.prototype.bind only exists in ECMAScript 5
+    // 2. Even if we only work with ECMAScript 5 compatible browsers,
+    // my test shows that we cannot use this method to create ArrayBuffer
+    // (at least in Chrome).
+    // So we will use the old-fashioned way to do this:)
 
-    Module.print("In js_call, handle: " + handle);
+    switch(args.length) {
+      case 1:
+        return new func(args[0]);
+      case 2:
+        return new func(args[0], args[1]);
+      case 3:
+        return new func(args[0], args[1], args[2]);
+      case 4:
+        return new func(args[0], args[1], args[2], args[3]);
+      case 5:
+        return new func(args[0], args[1], args[2], args[3], args[4]);
+      case 6:
+        return new func(args[0], args[1], args[2], args[3], args[4], args[5]);
+      case 7:
+        return new func(args[0], args[1], args[2], args[3], args[4], args[5],
+                        args[6]);
+      case 8:
+        return new func(args[0], args[1], args[2], args[3], args[4], args[5],
+                        args[6], args[7]);
+      case 9:
+        return new func(args[0], args[1], args[2], args[3], args[4], args[5],
+                        args[6], args[7], args[8]);
+      case 10:
+        return new func(args[0], args[1], args[2], args[3], args[4], args[5],
+                        args[6], args[7], args[8], args[9]);
+      default:
+        assert(false, "We do not support that many arguments now-_-");
+    }
+  },
 
+  js_call__deps: ['__js_fill_return_arg', '__js_fetch_field',
+                  '__js_fetch_object', '__js_call_using_new'],
+  js_call: function (mrb, handle, name_p, argv_p, argc, ret_p, ret_allow_object,
+                    constructor_call) {
     // Supported types. Currently we are only considering
     // false, true, number and string. Those are the
     // primitive types specified in the JSON spec.
@@ -143,7 +181,12 @@ mergeInto(LibraryManager.library, {
       args.push(type_handler(mrb, argv_p, i));
     }
 
-    var val = func.apply(this, args);
+    var val;
+    if (constructor_call === 1) {
+      val = ___js_call_using_new(func, args);
+    } else {
+      val = func.apply(this, args);
+    }
     ___js_fill_return_arg(mrb, ret_p, ret_allow_object, val);
   },
 

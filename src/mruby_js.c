@@ -113,8 +113,12 @@ void EMSCRIPTEN_KEEPALIVE mruby_js_set_object_handle(mrb_state *mrb, mrb_value* 
 /* mrb functions */
 
 /* See js/mruby_js.js file for the possible values of ret_allow_object */
-extern void js_call(mrb_state *mrb, mrb_int handle, const char *name, mrb_value *argv, int argc, mrb_value* ret, int ret_allow_object);
-extern void js_get_field(mrb_state *mrb, mrb_int handle, const char *field_name_p, mrb_value *ret, int ret_allow_object);
+extern void js_call(mrb_state *mrb, mrb_int handle, const char *name,
+                    mrb_value *argv, int argc,
+                    mrb_value* ret, int ret_allow_object,
+                    int constructor_call);
+extern void js_get_field(mrb_state *mrb, mrb_int handle, const char *field_name_p,
+                         mrb_value *ret, int ret_allow_object);
 extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
 extern void js_release_object(mrb_state *mrb, mrb_int handle);
 
@@ -161,7 +165,8 @@ mrb_js_handle_set(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-mrb_js_call_with_option(mrb_state *mrb, mrb_value self, int return_value_option)
+mrb_js_call_with_option(mrb_state *mrb, mrb_value self, int return_value_option,
+                        int constructor_call)
 {
   char* name = NULL;
   mrb_value *argv = NULL;
@@ -177,10 +182,12 @@ mrb_js_call_with_option(mrb_state *mrb, mrb_value self, int return_value_option)
 
   handle = mrb_iv_get(mrb, self, mrb_intern(mrb, "handle"));
   if (mrb_nil_p(handle) || ((handle_val = mrb_fixnum(handle)) <= 0)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "This object does not contain a valid handle, maybe it is closed already?");
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "This object does not contain a valid handle,"
+              " maybe it is closed already?");
   }
 
-  js_call(mrb, handle_val, name, argv, argc, &ret, return_value_option);
+  js_call(mrb, handle_val, name, argv, argc, &ret, return_value_option,
+          constructor_call);
   return ret;
 }
 
@@ -198,7 +205,8 @@ mrb_js_get_with_option(mrb_state *mrb, mrb_value self, int return_value_option)
 
   handle = mrb_iv_get(mrb, self, mrb_intern(mrb, "handle"));
   if (mrb_nil_p(handle) || ((handle_val = mrb_fixnum(handle)) <= 0)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "This object does not contain a valid handle, maybe it is closed already?");
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "This object does not contain a valid handle,"
+              " maybe it is closed already?");
   }
 
   js_get_field(mrb, handle_val, name, &ret, return_value_option);
@@ -209,21 +217,28 @@ static mrb_value
 mrb_js_call(mrb_state *mrb, mrb_value self)
 {
   /* Both primitive values and objects are allowed */
-  return mrb_js_call_with_option(mrb, self, 2);
+  return mrb_js_call_with_option(mrb, self, 2, 0);
 }
 
 static mrb_value
 mrb_js_call_primitive(mrb_state *mrb, mrb_value self)
 {
   /* Only primitive values are allowed */
-  return mrb_js_call_with_option(mrb, self, 0);
+  return mrb_js_call_with_option(mrb, self, 0, 0);
 }
 
 static mrb_value
 mrb_js_call_object(mrb_state *mrb, mrb_value self)
 {
   /* Only objects are allowed */
-  return mrb_js_call_with_option(mrb, self, 1);
+  return mrb_js_call_with_option(mrb, self, 1, 0);
+}
+
+static mrb_value
+mrb_js_call_constructor(mrb_state *mrb, mrb_value self)
+{
+  /* Only objects are allowed */
+  return mrb_js_call_with_option(mrb, self, 1, 1);
 }
 
 static mrb_value
@@ -268,6 +283,7 @@ mrb_mruby_js_gem_init(mrb_state* mrb) {
   mrb_define_method(mrb, js_obj_cls, "call", mrb_js_call, ARGS_ANY());
   mrb_define_method(mrb, js_obj_cls, "call_primitive", mrb_js_call_primitive, ARGS_ANY());
   mrb_define_method(mrb, js_obj_cls, "call_object", mrb_js_call_object, ARGS_ANY());
+  mrb_define_method(mrb, js_obj_cls, "call_constructor", mrb_js_call_constructor, ARGS_ANY());
   mrb_define_method(mrb, js_obj_cls, "get", mrb_js_get, ARGS_REQ(1));
   mrb_define_method(mrb, js_obj_cls, "get_primitive", mrb_js_get_primitive, ARGS_REQ(1));
   mrb_define_method(mrb, js_obj_cls, "get_object", mrb_js_get_object, ARGS_REQ(1));

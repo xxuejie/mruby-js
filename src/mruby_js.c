@@ -10,11 +10,14 @@
 
 #define INVALID_HANDLE -1
 
+static struct RClass *mjs_mod;
+static struct RClass *js_obj_cls;
+
 /* bridge functions between JS side and C side */
 
 int EMSCRIPTEN_KEEPALIVE mruby_js_argument_type(mrb_state *mrb, mrb_value* argv, int idx)
 {
-  return argv[idx].tt;
+  return mrb_type(argv[idx]);
 }
 
 char* EMSCRIPTEN_KEEPALIVE mruby_js_get_string(mrb_state *mrb, mrb_value* argv, int idx)
@@ -50,6 +53,20 @@ mrb_float EMSCRIPTEN_KEEPALIVE mruby_js_get_float(mrb_state *mrb, mrb_value* arg
   return mrb_float(argv[idx]);
 }
 
+mrb_int EMSCRIPTEN_KEEPALIVE mruby_js_get_object_handle(mrb_state *mrb, mrb_value* argv, int idx)
+{
+  if (mrb_type(argv[idx]) != MRB_TT_OBJECT) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an object!");
+  }
+
+  /* currently we only support passing objects of JsObject type */
+  if (mrb_object(argv[idx])->c != js_obj_cls) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Object argument must be JsObject type!");
+  }
+
+  return mrb_fixnum(mrb_iv_get(mrb, argv[idx], mrb_intern(mrb, "handle")));
+}
+
 void EMSCRIPTEN_KEEPALIVE mruby_js_name_error(mrb_state *mrb)
 {
   mrb_raise(mrb, E_ARGUMENT_ERROR, "Error occurs when locating the function to call!");
@@ -80,18 +97,14 @@ void EMSCRIPTEN_KEEPALIVE mruby_js_set_string(mrb_state *mrb, mrb_value* arg, co
   *arg = mrb_str_new_cstr(mrb, val);
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_set_object_with_handle(mrb_state *mrb, mrb_value* arg, mrb_int handle)
+void EMSCRIPTEN_KEEPALIVE mruby_js_set_object_handle(mrb_state *mrb, mrb_value* arg, mrb_int handle)
 {
-  mrb_value mod = mrb_const_get(mrb, mrb_obj_value(mrb->object_class),
-                                mrb_intern(mrb, "MrubyJs"));
-  mrb_value cls = mrb_const_get(mrb, mod, mrb_intern(mrb, "JsObject"));
-  struct RClass *c = mrb_class_ptr(cls);
   struct RObject *o;
-  enum mrb_vtype ttype = MRB_INSTANCE_TT(c);
+  enum mrb_vtype ttype = MRB_INSTANCE_TT(js_obj_cls);
   mrb_value argv;
 
   if (ttype == 0) ttype = MRB_TT_OBJECT;
-  o = (struct RObject*)mrb_obj_alloc(mrb, ttype, c);
+  o = (struct RObject*)mrb_obj_alloc(mrb, ttype, js_obj_cls);
   *arg = mrb_obj_value(o);
   argv = mrb_fixnum_value(handle);
   mrb_funcall_argv(mrb, *arg, mrb->init_sym, 1, &argv);
@@ -245,10 +258,10 @@ mrb_js_close(mrb_state *mrb, mrb_value self)
 
 void
 mrb_mruby_js_gem_init(mrb_state* mrb) {
-  struct RClass *module = mrb_define_module(mrb, "MrubyJs");
-  struct RClass *js_obj_cls = mrb_define_class_under(mrb, module, "JsObject", mrb->object_class);
+  mjs_mod = mrb_define_module(mrb, "MrubyJs");
+  js_obj_cls = mrb_define_class_under(mrb, mjs_mod, "JsObject", mrb->object_class);
 
-  mrb_define_class_method(mrb, module, "get_root_object", mrb_js_get_root_object, ARGS_NONE());
+  mrb_define_class_method(mrb, mjs_mod, "get_root_object", mrb_js_get_root_object, ARGS_NONE());
   mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_initialize, ARGS_REQ(1));
   mrb_define_method(mrb, js_obj_cls, "handle", mrb_js_handle_get, ARGS_NONE());
   mrb_define_method(mrb, js_obj_cls, "handle=", mrb_js_handle_set, ARGS_REQ(1));

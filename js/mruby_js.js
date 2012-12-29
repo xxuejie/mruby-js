@@ -65,7 +65,7 @@ mergeInto(LibraryManager.library, {
       'object': function (mrb, ret_p, ret_allow_object, val) {
         assert(ret_allow_object > 0, val + " cannot be a primitive value!");
         var handle = ___js_add_object(mrb, val);
-        _mruby_js_set_object_with_handle(mrb, ret_p, handle);
+        _mruby_js_set_object_handle(mrb, ret_p, handle);
       },
       'number': function (mrb, ret_p, ret_allow_object, val) {
         assert(ret_allow_object !== 1, val + " cannot be an object!");
@@ -109,7 +109,7 @@ mergeInto(LibraryManager.library, {
     }
   },
 
-  js_call__deps: ['__js_fill_return_arg', '__js_fetch_field'],
+  js_call__deps: ['__js_fill_return_arg', '__js_fetch_field', '__js_fetch_object'],
   js_call: function (mrb, handle, name_p, argv_p, argc, ret_p, ret_allow_object) {
 
     Module.print("In js_call, handle: " + handle);
@@ -122,6 +122,10 @@ mergeInto(LibraryManager.library, {
       2: function() { return true; },  // MRB_TT_TRUE
       3: _mruby_js_get_integer,        // MRB_TT_FIXNUM
       6: _mruby_js_get_float,          // MRB_TT_FLOAT
+      9: function() {
+        var handle = _mruby_js_get_object_handle.apply(this, arguments);
+        return ___js_fetch_object(mrb, handle);
+      },                        // MRB_TT_OBJECT
       17: function() {
         var str_p = _mruby_js_get_string.apply(this, arguments);
         return Module.Pointer_stringify(str_p);

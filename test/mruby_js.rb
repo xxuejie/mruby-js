@@ -1,7 +1,3 @@
 assert('mruby-js test 1') do
-  MrubyJs.respond_to? :test
-end
-
-assert('mruby-js test 2') do
-  MrubyJs.respond_to? :call
+  MrubyJs.respond_to? :get_root_object
 end

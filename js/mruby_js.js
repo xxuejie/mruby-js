@@ -202,11 +202,25 @@ mergeInto(LibraryManager.library, {
         rel_object["_mruby_js_count"] = rel_object["_mruby_js_count"] - 1;
         if (rel_object["_mruby_js_count"] === 0) {
           // reference count reaches 0, release object
+          var next_id = cache_object["_mruby_js_next_id"];
+
           delete cache_object[handle];
-          cache_object["_mruby_js_recycled_ids"].push(handle);
+          if (handle === (next_id - 1)) {
+            cache_object["_mruby_js_next_id"] = next_id - 1;
+          } else {
+            cache_object["_mruby_js_recycled_ids"].push(handle);
+          }
 
           delete rel_object["_mruby_js_id"];
           delete rel_object["_mruby_js_count"];
+
+          // Reset the next id when we have all recycled ids. I wonder
+          // if a slice loop which can recycle partial ids is needed here.
+          if (cache_object["_mruby_js_recycled_ids"].length ===
+              (cache_object["_mruby_js_next_id"] - 1)) {
+            cache_object["_mruby_js_next_id"] = 1;
+            cache_object["_mruby_js_recycled_ids"] = [];
+          }
         }
       }
     }

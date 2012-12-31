@@ -55,36 +55,27 @@ mergeInto(LibraryManager.library, {
   },
 
   __js_fill_return_arg__deps: ['__js_add_object', '__js_is_floating_number'],
-  // Possible values for ret_allow_object:
-  // 0 - return value can only be primitive value(no object)
-  // 1 - return value must be an object
-  // 2 - return value can be either an object or a primitive value
-  __js_fill_return_arg: function (mrb, ret_p, ret_allow_object, val) {
+  __js_fill_return_arg: function (mrb, ret_p, val) {
     var stack = 0;
     var RETURN_HANDLERS = {
-      'object': function (mrb, ret_p, ret_allow_object, val) {
-        assert(ret_allow_object > 0, val + " cannot be a primitive value!");
+      'object': function (mrb, ret_p, val) {
         var handle = ___js_add_object(mrb, val);
         _mruby_js_set_object_handle(mrb, ret_p, handle);
       },
-      'number': function (mrb, ret_p, ret_allow_object, val) {
-        assert(ret_allow_object !== 1, val + " cannot be an object!");
+      'number': function (mrb, ret_p, val) {
         if (___js_is_floating_number(val)) {
           _mruby_js_set_float(mrb, ret_p, val);
         } else {
           _mruby_js_set_integer(mrb, ret_p, val);
         }
       },
-      'boolean': function (mrb, ret_p, ret_allow_object, val) {
-        assert(ret_allow_object !== 1, val + " cannot be an object");
+      'boolean': function (mrb, ret_p, val) {
         _mruby_js_set_boolean(mrb, ret_p, (val) ? (1) : (0));
       },
-      'undefined': function (mrb, ret_p, ret_allow_object, val) {
-        assert(ret_allow_object !== 1, val + " cannot be an object");
+      'undefined': function (mrb, ret_p, val) {
         _mruby_js_set_nil(mrb, ret_p);
       },
-      'string': function (mrb, ret_p, ret_allow_object, val) {
-        assert(ret_allow_object !== 1, val + " cannot be an object");
+      'string': function (mrb, ret_p, val) {
         if (!stack) stack = Runtime.stackSave();
         var ret = Runtime.stackAlloc(val.length);
         writeArrayToMemory(val, ret);
@@ -95,7 +86,7 @@ mergeInto(LibraryManager.library, {
     if (ret_p) {
       var val_type = typeof val;
       if (val_type !== null) {
-        RETURN_HANDLERS[val_type](mrb, ret_p, ret_allow_object, val);
+        RETURN_HANDLERS[val_type](mrb, ret_p, val);
       }
     }
     if (stack) Runtime.stackRestore(stack);
@@ -150,7 +141,7 @@ mergeInto(LibraryManager.library, {
 
   js_call__deps: ['__js_fill_return_arg', '__js_fetch_field',
                   '__js_fetch_object', '__js_call_using_new'],
-  js_call: function (mrb, handle, name_p, argv_p, argc, ret_p, ret_allow_object,
+  js_call: function (mrb, handle, name_p, argv_p, argc, ret_p,
                     constructor_call) {
     // Supported types. Currently we are only considering
     // false, true, number and string. Those are the
@@ -187,19 +178,19 @@ mergeInto(LibraryManager.library, {
     } else {
       val = func.apply(this, args);
     }
-    ___js_fill_return_arg(mrb, ret_p, ret_allow_object, val);
+    ___js_fill_return_arg(mrb, ret_p, val);
   },
 
   js_get_field__deps: ['__js_fill_return_arg', '__js_fetch_field'],
-  js_get_field: function (mrb, handle, field_name_p, ret_p, ret_allow_object) {
+  js_get_field: function (mrb, handle, field_name_p, ret_p) {
     var field = ___js_fetch_field(mrb, handle, field_name_p);
-    ___js_fill_return_arg(mrb, ret_p, ret_allow_object, field);
+    ___js_fill_return_arg(mrb, ret_p, field);
   },
 
   js_get_root_object__deps: ['__js_global_object', '__js_fill_return_arg'],
   js_get_root_object: function (mrb, ret_p) {
     // Global object must be of object type
-    ___js_fill_return_arg(mrb, ret_p, 1, ___js_global_object());
+    ___js_fill_return_arg(mrb, ret_p, ___js_global_object());
   },
 
   js_release_object__deps: ['__js_global_object'],

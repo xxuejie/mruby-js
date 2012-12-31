@@ -1,20 +1,66 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <emscripten/emscripten.h>
 
 #include <mruby.h>
 #include <mruby/class.h>
+#include <mruby/data.h>
 #include <mruby/string.h>
 #include <mruby/variable.h>
 
 #define INVALID_HANDLE -1
 
+/* JS functions */
+/* See js/mruby_js.js file for the possible values of ret_allow_object */
+extern void js_call(mrb_state *mrb, mrb_int handle, const char *name,
+                    mrb_value *argv, int argc,
+                    mrb_value* ret, int constructor_call);
+extern void js_get_field(mrb_state *mrb, mrb_int handle, const char *field_name_p,
+                         mrb_value *ret);
+extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
+extern void js_release_object(mrb_state *mrb, mrb_int handle);
+
 static struct RClass *mjs_mod;
 static struct RClass *js_obj_cls;
 
-/* bridge functions between JS side and C side */
+/* Object handle is stored as RData in mruby to leverage auto-dfree calls,
+ * in other words, we are simulating finalizers here.
+ */
+static void
+mruby_js_object_handle_free(mrb_state *mrb, void *p)
+{
+  mrb_int* handle = (mrb_int*) p;
+  if (handle) {
+    js_release_object(mrb, *handle);
+  }
+  free(p);
+}
 
+static const struct mrb_data_type mruby_js_object_handle_type ={
+  "mruby_js_object_handle", mruby_js_object_handle_free
+};
+
+/* Gets the object handle value from a JsObject, it is put here since
+ * mruby_js_set_object_handle uses this function.
+ */
+static mrb_int
+mruby_js_get_object_handle_value(mrb_state *mrb, mrb_value js_obj)
+{
+  mrb_value value_handle;
+  mrb_int* handle_p = NULL;
+
+  value_handle = mrb_iv_get(mrb, js_obj, mrb_intern(mrb, "handle"));
+  Data_Get_Struct(mrb, value_handle, &mruby_js_object_handle_type, handle_p);
+  if (handle_p == NULL) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Cannot get handle value!");
+  }
+
+  return *handle_p;
+}
+
+/* bridge functions between JS side and C side */
 int EMSCRIPTEN_KEEPALIVE mruby_js_argument_type(mrb_state *mrb, mrb_value* argv, int idx)
 {
   return mrb_type(argv[idx]);
@@ -64,7 +110,7 @@ mrb_int EMSCRIPTEN_KEEPALIVE mruby_js_get_object_handle(mrb_state *mrb, mrb_valu
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Object argument must be JsObject type!");
   }
 
-  return mrb_fixnum(mrb_iv_get(mrb, argv[idx], mrb_intern(mrb, "handle")));
+  return mruby_js_get_object_handle_value(mrb, argv[idx]);
 }
 
 void EMSCRIPTEN_KEEPALIVE mruby_js_name_error(mrb_state *mrb)
@@ -112,22 +158,20 @@ void EMSCRIPTEN_KEEPALIVE mruby_js_set_object_handle(mrb_state *mrb, mrb_value* 
 
 /* mrb functions */
 
-/* See js/mruby_js.js file for the possible values of ret_allow_object */
-extern void js_call(mrb_state *mrb, mrb_int handle, const char *name,
-                    mrb_value *argv, int argc,
-                    mrb_value* ret, int ret_allow_object,
-                    int constructor_call);
-extern void js_get_field(mrb_state *mrb, mrb_int handle, const char *field_name_p,
-                         mrb_value *ret, int ret_allow_object);
-extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
-extern void js_release_object(mrb_state *mrb, mrb_int handle);
-
 static mrb_value
 mrb_js_get_root_object(mrb_state *mrb, mrb_value mod)
 {
-  mrb_value ret = mrb_nil_value();
+  mrb_sym root_sym = mrb_intern(mrb, "ROOT_OBJECT");
+  mrb_value ret = mrb_iv_get(mrb, mod, root_sym);
+  if (!mrb_nil_p(ret)) {
+    return ret;
+  }
 
   js_get_root_object(mrb, &ret);
+  if (!mrb_nil_p(ret)) {
+    /* Cache root object to ensure singleton */
+    mrb_iv_set(mrb, mod, root_sym, ret);
+  }
 
   return ret;
 }
@@ -136,139 +180,70 @@ static mrb_value
 mrb_js_initialize(mrb_state *mrb, mrb_value self)
 {
   mrb_int handle = INVALID_HANDLE;
+  mrb_int *handle_p;
 
   mrb_get_args(mrb, "i", &handle);
   if (handle <= 0) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "No valid handle is provided!");
   }
 
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "handle"), mrb_fixnum_value(handle));
+  handle_p = (mrb_int*) malloc(sizeof(mrb_int));
+  if (handle_p == NULL) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Cannot allocate memory!");
+  }
+  *handle_p = handle;
+  mrb_iv_set(mrb, self, mrb_intern(mrb, "handle"), mrb_obj_value(
+      Data_Wrap_Struct(mrb, mrb->object_class,
+                       &mruby_js_object_handle_type, (void*) handle_p)));
 
   return self;
 }
 
 static mrb_value
-mrb_js_handle_get(mrb_state *mrb, mrb_value self)
-{
-  return mrb_iv_get(mrb, self, mrb_intern(mrb, "handle"));
-}
-
-static mrb_value
-mrb_js_handle_set(mrb_state *mrb, mrb_value self)
-{
-  mrb_int handle = INVALID_HANDLE;
-  mrb_get_args(mrb, "i", &handle);
-
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "handle"), mrb_fixnum_value(handle));
-
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_js_call_with_option(mrb_state *mrb, mrb_value self, int return_value_option,
-                        int constructor_call)
+mrb_js_call_with_option(mrb_state *mrb, mrb_value self, int constructor_call)
 {
   char* name = NULL;
   mrb_value *argv = NULL;
-  mrb_value handle, ret = mrb_nil_value();
+  mrb_value ret = mrb_nil_value();
   int argc = 0;
-  mrb_int handle_val = INVALID_HANDLE;
 
-  /* TODO: block handling */
+  /* TODO: proc handling */
   mrb_get_args(mrb, "z*", &name, &argv, &argc);
   if (name == NULL) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Field name not provided!");
   }
 
-  handle = mrb_iv_get(mrb, self, mrb_intern(mrb, "handle"));
-  if (mrb_nil_p(handle) || ((handle_val = mrb_fixnum(handle)) <= 0)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "This object does not contain a valid handle,"
-              " maybe it is closed already?");
-  }
-
-  js_call(mrb, handle_val, name, argv, argc, &ret, return_value_option,
-          constructor_call);
-  return ret;
-}
-
-static mrb_value
-mrb_js_get_with_option(mrb_state *mrb, mrb_value self, int return_value_option)
-{
-  char* name = NULL;
-  mrb_value handle, ret = mrb_nil_value();
-  mrb_int handle_val = INVALID_HANDLE;
-
-  mrb_get_args(mrb, "z", &name);
-  if (name == NULL) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "Field name not provided!");
-  }
-
-  handle = mrb_iv_get(mrb, self, mrb_intern(mrb, "handle"));
-  if (mrb_nil_p(handle) || ((handle_val = mrb_fixnum(handle)) <= 0)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "This object does not contain a valid handle,"
-              " maybe it is closed already?");
-  }
-
-  js_get_field(mrb, handle_val, name, &ret, return_value_option);
+  js_call(mrb, mruby_js_get_object_handle_value(mrb, self),
+          name, argv, argc, &ret, constructor_call);
   return ret;
 }
 
 static mrb_value
 mrb_js_call(mrb_state *mrb, mrb_value self)
 {
-  /* Both primitive values and objects are allowed */
-  return mrb_js_call_with_option(mrb, self, 2, 0);
-}
-
-static mrb_value
-mrb_js_call_primitive(mrb_state *mrb, mrb_value self)
-{
-  /* Only primitive values are allowed */
-  return mrb_js_call_with_option(mrb, self, 0, 0);
-}
-
-static mrb_value
-mrb_js_call_object(mrb_state *mrb, mrb_value self)
-{
-  /* Only objects are allowed */
-  return mrb_js_call_with_option(mrb, self, 1, 0);
+  return mrb_js_call_with_option(mrb, self, 0);
 }
 
 static mrb_value
 mrb_js_call_constructor(mrb_state *mrb, mrb_value self)
 {
-  /* Only objects are allowed */
-  return mrb_js_call_with_option(mrb, self, 1, 1);
+  return mrb_js_call_with_option(mrb, self, 1);
 }
 
 static mrb_value
 mrb_js_get(mrb_state* mrb, mrb_value self)
 {
-  return mrb_js_get_with_option(mrb, self, 2);
-}
+  char* name = NULL;
+  mrb_value ret = mrb_nil_value();
 
-static mrb_value
-mrb_js_get_primitive(mrb_state* mrb, mrb_value self)
-{
-  return mrb_js_get_with_option(mrb, self, 0);
-}
+  mrb_get_args(mrb, "z", &name);
+  if (name == NULL) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Field name not provided!");
+  }
 
-static mrb_value
-mrb_js_get_object(mrb_state* mrb, mrb_value self)
-{
-  return mrb_js_get_with_option(mrb, self, 1);
-}
-
-static mrb_value
-mrb_js_close(mrb_state *mrb, mrb_value self)
-{
-  mrb_value handle = mrb_iv_get(mrb, self, mrb_intern(mrb, "handle"));
-
-  js_release_object(mrb, mrb_fixnum(handle));
-
-  mrb_iv_set(mrb, self, mrb_intern(mrb, "handle"), mrb_fixnum_value(INVALID_HANDLE));
-
-  return mrb_nil_value();
+  js_get_field(mrb, mruby_js_get_object_handle_value(mrb, self),
+               name, &ret);
+  return ret;
 }
 
 void
@@ -278,14 +253,8 @@ mrb_mruby_js_gem_init(mrb_state* mrb) {
 
   mrb_define_class_method(mrb, mjs_mod, "get_root_object", mrb_js_get_root_object, ARGS_NONE());
   mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_initialize, ARGS_REQ(1));
-  mrb_define_method(mrb, js_obj_cls, "handle", mrb_js_handle_get, ARGS_NONE());
-  mrb_define_method(mrb, js_obj_cls, "handle=", mrb_js_handle_set, ARGS_REQ(1));
+
   mrb_define_method(mrb, js_obj_cls, "call", mrb_js_call, ARGS_ANY());
-  mrb_define_method(mrb, js_obj_cls, "call_primitive", mrb_js_call_primitive, ARGS_ANY());
-  mrb_define_method(mrb, js_obj_cls, "call_object", mrb_js_call_object, ARGS_ANY());
   mrb_define_method(mrb, js_obj_cls, "call_constructor", mrb_js_call_constructor, ARGS_ANY());
   mrb_define_method(mrb, js_obj_cls, "get", mrb_js_get, ARGS_REQ(1));
-  mrb_define_method(mrb, js_obj_cls, "get_primitive", mrb_js_get_primitive, ARGS_REQ(1));
-  mrb_define_method(mrb, js_obj_cls, "get_object", mrb_js_get_object, ARGS_REQ(1));
-  mrb_define_method(mrb, js_obj_cls, "close", mrb_js_close, ARGS_NONE());
 }

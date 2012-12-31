@@ -5,4 +5,4 @@
 *.ctmp
 *.rbtmp
 
-gem_mixlib.c
+gem_*.c

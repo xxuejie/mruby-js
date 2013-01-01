@@ -61,12 +61,12 @@ mruby_js_get_object_handle_value(mrb_state *mrb, mrb_value js_obj)
 }
 
 /* bridge functions between JS side and C side */
-int EMSCRIPTEN_KEEPALIVE mruby_js_argument_type(mrb_state *mrb, mrb_value* argv, int idx)
+int mruby_js_argument_type(mrb_state *mrb, mrb_value* argv, int idx)
 {
   return mrb_type(argv[idx]);
 }
 
-char* EMSCRIPTEN_KEEPALIVE mruby_js_get_string(mrb_state *mrb, mrb_value* argv, int idx)
+char* mruby_js_get_string(mrb_state *mrb, mrb_value* argv, int idx)
 {
   struct RString *s;
   /* TODO: well, let's come back to the auto-conversion later,
@@ -83,7 +83,7 @@ char* EMSCRIPTEN_KEEPALIVE mruby_js_get_string(mrb_state *mrb, mrb_value* argv, 
   return s->ptr;
 }
 
-mrb_int EMSCRIPTEN_KEEPALIVE mruby_js_get_integer(mrb_state *mrb, mrb_value* argv, int idx)
+mrb_int mruby_js_get_integer(mrb_state *mrb, mrb_value* argv, int idx)
 {
   if (mrb_type(argv[idx]) != MRB_TT_FIXNUM) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an integer!");
@@ -91,7 +91,7 @@ mrb_int EMSCRIPTEN_KEEPALIVE mruby_js_get_integer(mrb_state *mrb, mrb_value* arg
   return mrb_fixnum(argv[idx]);
 }
 
-mrb_float EMSCRIPTEN_KEEPALIVE mruby_js_get_float(mrb_state *mrb, mrb_value* argv, int idx)
+mrb_float mruby_js_get_float(mrb_state *mrb, mrb_value* argv, int idx)
 {
   if (mrb_type(argv[idx]) != MRB_TT_FLOAT) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not a float!");
@@ -99,7 +99,7 @@ mrb_float EMSCRIPTEN_KEEPALIVE mruby_js_get_float(mrb_state *mrb, mrb_value* arg
   return mrb_float(argv[idx]);
 }
 
-mrb_int EMSCRIPTEN_KEEPALIVE mruby_js_get_object_handle(mrb_state *mrb, mrb_value* argv, int idx)
+mrb_int mruby_js_get_object_handle(mrb_state *mrb, mrb_value* argv, int idx)
 {
   if (mrb_type(argv[idx]) != MRB_TT_OBJECT) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an object!");
@@ -113,37 +113,37 @@ mrb_int EMSCRIPTEN_KEEPALIVE mruby_js_get_object_handle(mrb_state *mrb, mrb_valu
   return mruby_js_get_object_handle_value(mrb, argv[idx]);
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_name_error(mrb_state *mrb)
+void mruby_js_name_error(mrb_state *mrb)
 {
   mrb_raise(mrb, E_ARGUMENT_ERROR, "Error occurs when locating the function to call!");
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_set_integer(mrb_state *mrb, mrb_value* arg, mrb_int val)
+void mruby_js_set_integer(mrb_state *mrb, mrb_value* arg, mrb_int val)
 {
   *arg = mrb_fixnum_value(val);
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_set_float(mrb_state *mrb, mrb_value* arg, mrb_float val)
+void mruby_js_set_float(mrb_state *mrb, mrb_value* arg, mrb_float val)
 {
   *arg = mrb_float_value(val);
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_set_boolean(mrb_state *mrb, mrb_value* arg, int val)
+void mruby_js_set_boolean(mrb_state *mrb, mrb_value* arg, int val)
 {
   *arg = (val == 1) ? (mrb_true_value()) : (mrb_false_value());
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_set_nil(mrb_state *mrb, mrb_value* arg)
+void mruby_js_set_nil(mrb_state *mrb, mrb_value* arg)
 {
   *arg = mrb_nil_value();
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_set_string(mrb_state *mrb, mrb_value* arg, const char* val)
+void mruby_js_set_string(mrb_state *mrb, mrb_value* arg, const char* val)
 {
   *arg = mrb_str_new_cstr(mrb, val);
 }
 
-void EMSCRIPTEN_KEEPALIVE mruby_js_set_object_handle(mrb_state *mrb, mrb_value* arg, mrb_int handle)
+void mruby_js_set_object_handle(mrb_state *mrb, mrb_value* arg, mrb_int handle)
 {
   struct RObject *o;
   enum mrb_vtype ttype = MRB_INSTANCE_TT(js_obj_cls);

@@ -92,9 +92,7 @@ mergeInto(LibraryManager.library, {
     if (stack) Runtime.stackRestore(stack);
   },
 
-  __js_fetch_field__deps: ['__js_fetch_object', '__js_global_object'],
-  __js_fetch_field: function (mrb, handle, name_p) {
-    var base_object = ___js_fetch_object(mrb, handle);
+  __js_fetch_field: function (base_object, name_p) {
     if (base_object && (typeof base_object === 'object')) {
       return base_object[Module.Pointer_stringify(name_p)];
     }
@@ -152,16 +150,17 @@ mergeInto(LibraryManager.library, {
       3: _mruby_js_get_integer,        // MRB_TT_FIXNUM
       6: _mruby_js_get_float,          // MRB_TT_FLOAT
       9: function() {
-        var handle = _mruby_js_get_object_handle.apply(this, arguments);
+        var handle = _mruby_js_get_object_handle.apply(null, arguments);
         return ___js_fetch_object(mrb, handle);
       },                        // MRB_TT_OBJECT
       17: function() {
-        var str_p = _mruby_js_get_string.apply(this, arguments);
+        var str_p = _mruby_js_get_string.apply(null, arguments);
         return Module.Pointer_stringify(str_p);
       }                         // MRB_TT_STRING
     };
 
-    var func = ___js_fetch_field(mrb, handle, name_p);
+    var base_object = ___js_fetch_object(mrb, handle);
+    var func = ___js_fetch_field(base_object, name_p);
     if (typeof func !== 'function') {
       _mruby_js_name_error(mrb);
     }
@@ -176,14 +175,16 @@ mergeInto(LibraryManager.library, {
     if (constructor_call === 1) {
       val = ___js_call_using_new(func, args);
     } else {
-      val = func.apply(this, args);
+      val = func.apply(base_object, args);
     }
     ___js_fill_return_arg(mrb, ret_p, val);
   },
 
-  js_get_field__deps: ['__js_fill_return_arg', '__js_fetch_field'],
+  js_get_field__deps: ['__js_fill_return_arg', '__js_fetch_field',
+                       '__js_fetch_object'],
   js_get_field: function (mrb, handle, field_name_p, ret_p) {
-    var field = ___js_fetch_field(mrb, handle, field_name_p);
+    var field = ___js_fetch_field(___js_fetch_object(mrb, handle),
+                                  field_name_p);
     ___js_fill_return_arg(mrb, ret_p, field);
   },
 

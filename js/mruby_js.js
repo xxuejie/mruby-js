@@ -146,14 +146,14 @@ mergeInto(LibraryManager.library, {
     // primitive types specified in the JSON spec.
     var TYPE_HANDLERS = {
       0: function() { return false; }, // MRB_TT_FALSE
-      2: function() { return true; },  // MRB_TT_TRUE
-      3: _mruby_js_get_integer,        // MRB_TT_FIXNUM
-      6: _mruby_js_get_float,          // MRB_TT_FLOAT
-      9: function() {
+      1: function() { return true; },  // MRB_TT_TRUE
+      2: _mruby_js_get_integer,        // MRB_TT_FIXNUM
+      3: _mruby_js_get_float,          // MRB_TT_FLOAT
+      4: function() {
         var handle = _mruby_js_get_object_handle.apply(null, arguments);
         return ___js_fetch_object(mrb, handle);
       },                        // MRB_TT_OBJECT
-      17: function() {
+      5: function() {
         var str_p = _mruby_js_get_string.apply(null, arguments);
         return Module.Pointer_stringify(str_p);
       }                         // MRB_TT_STRING

@@ -63,7 +63,26 @@ mruby_js_get_object_handle_value(mrb_state *mrb, mrb_value js_obj)
 /* bridge functions between JS side and C side */
 int mruby_js_argument_type(mrb_state *mrb, mrb_value* argv, int idx)
 {
-  return mrb_type(argv[idx]);
+  enum mrb_vtype t = mrb_type(argv[idx]);
+  switch (t) {
+    case MRB_TT_FALSE:
+      return 0;
+    case MRB_TT_TRUE:
+      return 1;
+    case MRB_TT_FIXNUM:
+      return 2;
+    case MRB_TT_FLOAT:
+      return 3;
+    case MRB_TT_OBJECT:
+      return 4;
+    case MRB_TT_STRING:
+      return 5;
+    default:
+      mrb_raisef(mrb, E_ARGUMENT_ERROR,
+                 "Given type %d is not supported in JavaScript!\n", t);
+  }
+  /* This is not reachable */
+  return -1;
 }
 
 char* mruby_js_get_string(mrb_state *mrb, mrb_value* argv, int idx)
@@ -249,9 +268,9 @@ mrb_js_get(mrb_state* mrb, mrb_value self)
 void
 mrb_mruby_js_gem_init(mrb_state* mrb) {
   mjs_mod = mrb_define_module(mrb, "MrubyJs");
-  js_obj_cls = mrb_define_class_under(mrb, mjs_mod, "JsObject", mrb->object_class);
-
   mrb_define_class_method(mrb, mjs_mod, "get_root_object", mrb_js_get_root_object, ARGS_NONE());
+
+  js_obj_cls = mrb_define_class_under(mrb, mjs_mod, "JsObject", mrb->object_class);
   mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_initialize, ARGS_REQ(1));
 
   mrb_define_method(mrb, js_obj_cls, "call", mrb_js_call, ARGS_ANY());

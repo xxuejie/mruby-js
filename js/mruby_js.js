@@ -94,7 +94,7 @@ mergeInto(LibraryManager.library, {
 
   __js_fetch_field: function (base_object, name_p) {
     if (base_object && (typeof base_object === 'object')) {
-      return base_object[Module.Pointer_stringify(name_p)];
+      return base_object[Module['Pointer_stringify'](name_p)];
     }
   },
 
@@ -155,7 +155,7 @@ mergeInto(LibraryManager.library, {
       },                        // MRB_TT_OBJECT
       5: function() {
         var str_p = _mruby_js_get_string.apply(null, arguments);
-        return Module.Pointer_stringify(str_p);
+        return Module['Pointer_stringify'](str_p);
       }                         // MRB_TT_STRING
     };
 

@@ -277,3 +277,7 @@ mrb_mruby_js_gem_init(mrb_state* mrb) {
   mrb_define_method(mrb, js_obj_cls, "call_constructor", mrb_js_call_constructor, ARGS_ANY());
   mrb_define_method(mrb, js_obj_cls, "get", mrb_js_get, ARGS_REQ(1));
 }
+
+void
+mrb_mruby_js_gem_final(mrb_state* mrb) {
+}

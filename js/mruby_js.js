@@ -55,27 +55,31 @@ mergeInto(LibraryManager.library, {
   },
 
   __js_fill_return_arg__deps: ['__js_add_object', '__js_is_floating_number'],
-  __js_fill_return_arg: function (mrb, ret_p, val) {
+  __js_fill_return_arg: function (mrb, ret_p, val, parent_p) {
     var stack = 0;
     var RETURN_HANDLERS = {
-      'object': function (mrb, ret_p, val) {
+      'object': function () {
         var handle = ___js_add_object(mrb, val);
         _mruby_js_set_object_handle(mrb, ret_p, handle);
       },
-      'number': function (mrb, ret_p, val) {
+      'function': function () {
+        var handle = ___js_add_object(mrb, val);
+        _mruby_js_set_function_handle(mrb, ret_p, handle, parent_p);
+      },
+      'number': function () {
         if (___js_is_floating_number(val)) {
           _mruby_js_set_float(mrb, ret_p, val);
         } else {
           _mruby_js_set_integer(mrb, ret_p, val);
         }
       },
-      'boolean': function (mrb, ret_p, val) {
+      'boolean': function () {
         _mruby_js_set_boolean(mrb, ret_p, (val) ? (1) : (0));
       },
-      'undefined': function (mrb, ret_p, val) {
+      'undefined': function () {
         _mruby_js_set_nil(mrb, ret_p);
       },
-      'string': function (mrb, ret_p, val) {
+      'string': function () {
         if (!stack) stack = Runtime.stackSave();
         var ret = Runtime.stackAlloc(val.length);
         writeArrayToMemory(val, ret);
@@ -86,7 +90,7 @@ mergeInto(LibraryManager.library, {
     if (ret_p) {
       var val_type = typeof val;
       if (val_type !== null) {
-        RETURN_HANDLERS[val_type](mrb, ret_p, val);
+        RETURN_HANDLERS[val_type]();
       }
     }
     if (stack) Runtime.stackRestore(stack);
@@ -98,7 +102,7 @@ mergeInto(LibraryManager.library, {
     }
   },
 
-  __js_call_using_new: function (func, args) {
+  __js_invoke_using_new: function (func, args) {
     // This function uses "new" operator to call JavaScript functions.
     // It is implemented in the following way for two reasons:
     // 1. Function.prototype.bind only exists in ECMAScript 5
@@ -137,10 +141,12 @@ mergeInto(LibraryManager.library, {
     }
   },
 
-  js_call__deps: ['__js_fill_return_arg', '__js_fetch_field',
-                  '__js_fetch_object', '__js_call_using_new'],
-  js_call: function (mrb, handle, name_p, argv_p, argc, ret_p,
-                    constructor_call) {
+  js_invoke__deps: ['__js_fill_return_arg', '__js_fetch_field',
+                  '__js_fetch_object', '__js_invoke_using_new'],
+  js_invoke: function (mrb, this_value_p,
+                       func_handle,
+                       argv_p, argc,
+                       ret_p, type) {
     // Supported types. Currently we are only considering
     // false, true, number and string. Those are the
     // primitive types specified in the JSON spec.
@@ -156,13 +162,22 @@ mergeInto(LibraryManager.library, {
       5: function() {
         var str_p = _mruby_js_get_string.apply(null, arguments);
         return Module['Pointer_stringify'](str_p);
-      }                         // MRB_TT_STRING
+      },                        // MRB_TT_STRING
+      6: function() { return undefined; } // nil value
     };
 
-    var base_object = ___js_fetch_object(mrb, handle);
-    var func = ___js_fetch_field(base_object, name_p);
+    var this_handler = TYPE_HANDLERS[_mruby_js_argument_type(mrb, this_value_p, 0)];
+    var this_value = this_handler(mrb, this_value_p, 0);
+
+    var func = ___js_fetch_object(mrb, func_handle);
     if (typeof func !== 'function') {
       _mruby_js_name_error(mrb);
+    }
+    if (type !== 2) {
+      if (this_value === window) {
+        // ECMAScript 5 compatible calling convention
+        this_value = undefined;
+      }
     }
 
     var i = 0, args = [], type_handler;
@@ -172,26 +187,29 @@ mergeInto(LibraryManager.library, {
     }
 
     var val;
-    if (constructor_call === 1) {
-      val = ___js_call_using_new(func, args);
+    if (type === 1) {
+      val = ___js_invoke_using_new(func, args);
     } else {
-      val = func.apply(base_object, args);
+      val = func.apply(this_value, args);
     }
-    ___js_fill_return_arg(mrb, ret_p, val);
+
+    // Returned value does not have a parent
+    ___js_fill_return_arg(mrb, ret_p, val, 0);
   },
 
   js_get_field__deps: ['__js_fill_return_arg', '__js_fetch_field',
                        '__js_fetch_object'],
-  js_get_field: function (mrb, handle, field_name_p, ret_p) {
+  js_get_field: function (mrb, obj_p, field_name_p, ret_p) {
+    var handle = _mruby_js_get_object_handle(mrb, obj_p, 0);
     var field = ___js_fetch_field(___js_fetch_object(mrb, handle),
                                   field_name_p);
-    ___js_fill_return_arg(mrb, ret_p, field);
+    ___js_fill_return_arg(mrb, ret_p, field, obj_p);
   },
 
   js_get_root_object__deps: ['__js_global_object', '__js_fill_return_arg'],
   js_get_root_object: function (mrb, ret_p) {
-    // Global object must be of object type
-    ___js_fill_return_arg(mrb, ret_p, ___js_global_object());
+    // Global object must be of object type, and has no parent.
+    ___js_fill_return_arg(mrb, ret_p, ___js_global_object(), 0);
   },
 
   js_release_object__deps: ['__js_global_object'],

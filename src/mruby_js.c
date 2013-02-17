@@ -8,22 +8,24 @@
 #include <mruby/class.h>
 #include <mruby/data.h>
 #include <mruby/string.h>
+#include <mruby/value.h>
 #include <mruby/variable.h>
 
 #define INVALID_HANDLE -1
 
 /* JS functions */
-/* See js/mruby_js.js file for the possible values of ret_allow_object */
-extern void js_call(mrb_state *mrb, mrb_int handle, const char *name,
-                    mrb_value *argv, int argc,
-                    mrb_value* ret, int constructor_call);
-extern void js_get_field(mrb_state *mrb, mrb_int handle, const char *field_name_p,
-                         mrb_value *ret);
+extern void js_invoke(mrb_state *mrb, mrb_value* this_value,
+                      mrb_int func_handle,
+                      mrb_value *argv, int argc,
+                      mrb_value* ret, int type);
+extern void js_get_field(mrb_state *mrb, mrb_value *obj_p,
+                         const char *field_name_p, mrb_value *ret);
 extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
 extern void js_release_object(mrb_state *mrb, mrb_int handle);
 
 static struct RClass *mjs_mod;
 static struct RClass *js_obj_cls;
+static struct RClass *js_func_cls;
 
 /* Object handle is stored as RData in mruby to leverage auto-dfree calls,
  * in other words, we are simulating finalizers here.
@@ -66,7 +68,11 @@ int mruby_js_argument_type(mrb_state *mrb, mrb_value* argv, int idx)
   enum mrb_vtype t = mrb_type(argv[idx]);
   switch (t) {
     case MRB_TT_FALSE:
-      return 0;
+      if (mrb_nil_p(argv[idx])) {
+        return 6;
+      } else {
+        return 0;
+      }
     case MRB_TT_TRUE:
       return 1;
     case MRB_TT_FIXNUM:
@@ -175,6 +181,27 @@ void mruby_js_set_object_handle(mrb_state *mrb, mrb_value* arg, mrb_int handle)
   mrb_funcall_argv(mrb, *arg, mrb->init_sym, 1, &argv);
 }
 
+void mruby_js_set_function_handle(mrb_state *mrb, mrb_value* arg,
+                                  mrb_int handle, mrb_value* parent)
+{
+  struct RObject *o;
+  enum mrb_vtype ttype = MRB_INSTANCE_TT(js_func_cls);
+  mrb_value argv[2];
+
+  if (ttype == 0) ttype = MRB_TT_OBJECT;
+  o = (struct RObject*)mrb_obj_alloc(mrb, ttype, js_func_cls);
+  *arg = mrb_obj_value(o);
+
+  argv[0] = mrb_fixnum_value(handle);
+  if (parent != NULL) {
+    argv[1] = *parent;
+  } else {
+    argv[1] = mrb_nil_value();
+  }
+
+  mrb_funcall_argv(mrb, *arg, mrb->init_sym, 2, argv);
+}
+
 /* mrb functions */
 
 static mrb_value
@@ -196,7 +223,7 @@ mrb_js_get_root_object(mrb_state *mrb, mrb_value mod)
 }
 
 static mrb_value
-mrb_js_initialize(mrb_state *mrb, mrb_value self)
+mrb_js_obj_initialize(mrb_state *mrb, mrb_value self)
 {
   mrb_int handle = INVALID_HANDLE;
   mrb_int *handle_p;
@@ -219,49 +246,52 @@ mrb_js_initialize(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-mrb_js_call_with_option(mrb_state *mrb, mrb_value self, int constructor_call)
-{
-  char* name = NULL;
-  mrb_value *argv = NULL;
-  mrb_value ret = mrb_nil_value();
-  int argc = 0;
-
-  /* TODO: proc handling */
-  mrb_get_args(mrb, "z*", &name, &argv, &argc);
-  if (name == NULL) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "Field name not provided!");
-  }
-
-  js_call(mrb, mruby_js_get_object_handle_value(mrb, self),
-          name, argv, argc, &ret, constructor_call);
-  return ret;
-}
-
-static mrb_value
-mrb_js_call(mrb_state *mrb, mrb_value self)
-{
-  return mrb_js_call_with_option(mrb, self, 0);
-}
-
-static mrb_value
-mrb_js_call_constructor(mrb_state *mrb, mrb_value self)
-{
-  return mrb_js_call_with_option(mrb, self, 1);
-}
-
-static mrb_value
-mrb_js_get(mrb_state* mrb, mrb_value self)
+mrb_js_obj_get(mrb_state* mrb, mrb_value self)
 {
   char* name = NULL;
   mrb_value ret = mrb_nil_value();
 
   mrb_get_args(mrb, "z", &name);
   if (name == NULL) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "Field name not provided!");
+    return mrb_nil_value();
   }
 
-  js_get_field(mrb, mruby_js_get_object_handle_value(mrb, self),
-               name, &ret);
+  js_get_field(mrb, &self, name, &ret);
+  return ret;
+}
+
+/*
+ * Valid invoke types:
+ * 0 - Normal function call
+ * 1 - New call
+ * 2 - Normal call specifying this value
+ */
+static mrb_value
+mrb_js_func_invoke_internal(mrb_state *mrb, mrb_value func)
+{
+  mrb_value *argv = NULL;
+  mrb_value ret = mrb_nil_value();
+  mrb_value this_value;
+  int argc = 0, type = -1;
+
+  /* TODO: proc handling */
+  mrb_get_args(mrb, "i*", &type, &argv, &argc);
+
+  if (type == 2) {
+    /* call with this object */
+    this_value = argv[0];
+
+    argv++;
+    argc--;
+  } else {
+    /* this object is parent object by default */
+     this_value = mrb_funcall_argv(mrb, func, mrb_intern(mrb, "parent_object"),
+                                   0, NULL);
+  }
+
+  js_invoke(mrb, &this_value,
+            mruby_js_get_object_handle_value(mrb, func),
+            argv, argc, &ret, type);
   return ret;
 }
 
@@ -271,11 +301,11 @@ mrb_mruby_js_gem_init(mrb_state* mrb) {
   mrb_define_class_method(mrb, mjs_mod, "get_root_object", mrb_js_get_root_object, ARGS_NONE());
 
   js_obj_cls = mrb_define_class_under(mrb, mjs_mod, "JsObject", mrb->object_class);
-  mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_initialize, ARGS_REQ(1));
+  mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_obj_initialize, ARGS_REQ(1));
+  mrb_define_method(mrb, js_obj_cls, "get", mrb_js_obj_get, ARGS_REQ(1));
 
-  mrb_define_method(mrb, js_obj_cls, "call", mrb_js_call, ARGS_ANY());
-  mrb_define_method(mrb, js_obj_cls, "call_constructor", mrb_js_call_constructor, ARGS_ANY());
-  mrb_define_method(mrb, js_obj_cls, "get", mrb_js_get, ARGS_REQ(1));
+  js_func_cls = mrb_define_class_under(mrb, mjs_mod, "JsFunction", js_obj_cls);
+  mrb_define_method(mrb, js_func_cls, "invoke_internal", mrb_js_func_invoke_internal, ARGS_ANY());
 }
 
 void

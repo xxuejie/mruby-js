@@ -19,9 +19,17 @@ module MrubyJs
     end
 
     # For methods that do not conflict with Ruby, we can directly
-    # call them
+    # call them or fetch them, the following rules are used:
+    # 1. If args is an empty array, we will fetch the field
+    # 2. If args is not empty, we will fetch the function and make the call
+    # Our solution here only covers the most common cases, users
+    # will need to explicitly use call or get for other rare cases
     def method_missing(key, *args)
-      call(key.to_s, *args)
+      if args.length > 0
+        call(key.to_s, *args)
+      else
+        get(key.to_s)
+      end
     end
   end
 
@@ -44,6 +52,10 @@ module MrubyJs
 
     def invoke_with_this(this_value, *args)
       invoke_internal(2, this_value, *args)
+    end
+
+    def [](*args)
+      invoke(*args)
     end
 
     def method_missing(key, *args)

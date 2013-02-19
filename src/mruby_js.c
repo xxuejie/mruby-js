@@ -7,6 +7,7 @@
 #include <mruby.h>
 #include <mruby/class.h>
 #include <mruby/data.h>
+#include <mruby/proc.h>
 #include <mruby/string.h>
 #include <mruby/value.h>
 #include <mruby/variable.h>
@@ -83,6 +84,9 @@ int mruby_js_argument_type(mrb_state *mrb, mrb_value* argv, int idx)
       return 4;
     case MRB_TT_STRING:
       return 5;
+    case MRB_TT_PROC:
+      /* 6 is used by nil */
+      return 7;
     default:
       mrb_raisef(mrb, E_ARGUMENT_ERROR,
                  "Given type %d is not supported in JavaScript!\n", t);
@@ -136,6 +140,34 @@ mrb_int mruby_js_get_object_handle(mrb_state *mrb, mrb_value* argv, int idx)
   }
 
   return mruby_js_get_object_handle_value(mrb, argv[idx]);
+}
+
+struct RProc* mruby_js_get_proc(mrb_state *mrb, mrb_value *argv, int idx)
+{
+  if (mrb_type(argv[idx]) != MRB_TT_PROC) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not a proc!");
+  }
+
+  /* save proc in a global array to avoid GC */
+  mrb_funcall_argv(mrb, mrb_obj_value(mjs_mod),
+                   mrb_intern(mrb, "add_proc"),
+                   1, &argv[idx]);
+
+  return mrb_proc_ptr(argv[idx]);
+}
+
+/* invoke proc from js side */
+void mruby_js_invoke_proc(mrb_state *mrb, struct RProc* proc,
+                          int argc, mrb_value *argv)
+{
+  /*
+   * TODO: we may add code to allow the proc to destroy itself after
+   * calling certain times, the checking logic should be added here.
+   */
+  mrb_yield_argv(mrb, mrb_obj_value(proc), argc, argv);
+  if (mrb->exc) {
+    mrb_p(mrb, mrb_obj_value(mrb->exc));
+  }
 }
 
 void mruby_js_name_error(mrb_state *mrb)

@@ -3,6 +3,8 @@ mruby_js_get_string
 mruby_js_get_integer
 mruby_js_get_float
 mruby_js_get_object_handle
+mruby_js_get_proc
+mruby_js_invoke_proc
 mruby_js_name_error
 mruby_js_set_integer
 mruby_js_set_float

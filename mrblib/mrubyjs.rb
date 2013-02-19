@@ -1,4 +1,15 @@
 module MrubyJs
+  # procs that are used in callbacks
+  @@procs = []
+
+  def self.add_proc(p)
+    @@procs << p
+  end
+
+  def self.release_proc(p)
+    @@procs.delete(p)
+  end
+
   class JsObject
     def call(name, *args)
       get_func(name).invoke(*args)

@@ -147,9 +147,7 @@ mergeInto(LibraryManager.library, {
                        func_handle,
                        argv_p, argc,
                        ret_p, type) {
-    // Supported types. Currently we are only considering
-    // false, true, number and string. Those are the
-    // primitive types specified in the JSON spec.
+    // TODO: add array passing support
     var TYPE_HANDLERS = {
       0: function() { return false; }, // MRB_TT_FALSE
       1: function() { return true; },  // MRB_TT_TRUE
@@ -163,7 +161,14 @@ mergeInto(LibraryManager.library, {
         var str_p = _mruby_js_get_string.apply(null, arguments);
         return Module['Pointer_stringify'](str_p);
       },                        // MRB_TT_STRING
-      6: function() { return undefined; } // nil value
+      6: function() { return undefined; }, // nil value
+      7: function() {
+        var proc = _mruby_js_get_proc.apply(null, arguments);
+        return function() {
+          // TODO: add argument passing support
+          _mruby_js_invoke_proc(mrb, proc, 0, 0);
+        };
+      }                         // MRB_TT_PROC
     };
 
     var this_handler = TYPE_HANDLERS[_mruby_js_argument_type(mrb, this_value_p, 0)];

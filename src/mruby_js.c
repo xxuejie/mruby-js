@@ -160,14 +160,16 @@ struct RProc* mruby_js_get_proc(mrb_state *mrb, mrb_value *argv, int idx)
 void mruby_js_invoke_proc(mrb_state *mrb, struct RProc* proc,
                           int argc, mrb_value *argv)
 {
-  /*
-   * TODO: we may add code to allow the proc to destroy itself after
-   * calling certain times, the checking logic should be added here.
-   */
-  mrb_yield_argv(mrb, mrb_obj_value(proc), argc, argv);
+  mrb_value p = mrb_obj_value(proc);
+
+  mrb_yield_argv(mrb, p, argc, argv);
   if (mrb->exc) {
     mrb_p(mrb, mrb_obj_value(mrb->exc));
   }
+
+  mrb_funcall_argv(mrb, mrb_obj_value(mjs_mod),
+                   mrb_intern(mrb, "call_proc"),
+                   1, &p);
 }
 
 void mruby_js_name_error(mrb_state *mrb)

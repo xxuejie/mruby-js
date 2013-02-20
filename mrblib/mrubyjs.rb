@@ -1,13 +1,23 @@
 module MrubyJs
   # procs that are used in callbacks
-  @@procs = []
+  @@procs = {}
 
-  def self.add_proc(p)
-    @@procs << p
+  def self.add_proc(p, times = -1)
+    @@procs[p] = times unless @@procs.has_key? p
   end
 
-  def self.release_proc(p)
-    @@procs.delete(p)
+  def self.call_proc(p)
+    if @@procs.has_key? p
+      t = @@procs[p]
+      return if t == -1
+
+      if t <= 1
+        # remove expired procs
+        @@procs.delete(p)
+      else
+        @@procs[p] = t - 1
+      end
+    end
   end
 
   class JsObject
@@ -72,5 +82,12 @@ module MrubyJs
     def method_missing(key, *args)
       invoke(key.to_s, *args)
     end
+  end
+end
+
+class Proc
+  def release_after(n)
+    MrubyJs::add_proc(self, n)
+    self
   end
 end

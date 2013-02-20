@@ -30,8 +30,8 @@ mergeInto(LibraryManager.library, {
         new_id = cache_object["_mruby_js_next_id"];
 
         cache_object["_mruby_js_next_id"] = new_id + 1;
-        cache_object[new_id] = obj;
       }
+      cache_object[new_id] = obj;
 
       obj["_mruby_js_id"] = new_id;
       obj["_mruby_js_count"] = 1;

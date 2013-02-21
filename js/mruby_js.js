@@ -141,7 +141,7 @@ mergeInto(LibraryManager.library, {
     }
   },
 
-  js_invoke__deps: ['__js_fetch_object'],
+  __js_fetch_argument__deps: ['__js_fetch_object'],
   __js_fetch_argument: function(mrb, argv_p, idx) {
     // TODO: add array passing support
     var TYPE_HANDLERS = {
@@ -164,7 +164,17 @@ mergeInto(LibraryManager.library, {
           // TODO: add argument passing support
           _mruby_js_invoke_proc(mrb, proc, 0, 0);
         };
-      }                         // MRB_TT_PROC
+      },                        // MRB_TT_PROC
+      8: function() {
+        var ret = [], i;
+        var len = _mruby_js_get_array_len.apply(null, arguments);
+        var mrb_array_p = _mruby_js_get_array.apply(null, arguments);
+
+        for (i = 0; i < len; i++) {
+          ret.push(___js_fetch_argument(mrb, mrb_array_p, i));
+        }
+        return ret;
+      }                         // MRB_TT_ARRAY
     };
 
     var handler = TYPE_HANDLERS[_mruby_js_argument_type(mrb, argv_p, idx)];

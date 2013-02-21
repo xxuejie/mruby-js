@@ -5,6 +5,7 @@
 #include <emscripten/emscripten.h>
 
 #include <mruby.h>
+#include <mruby/array.h>
 #include <mruby/class.h>
 #include <mruby/data.h>
 #include <mruby/proc.h>
@@ -87,6 +88,8 @@ int mruby_js_argument_type(mrb_state *mrb, mrb_value *argv, int idx)
     case MRB_TT_PROC:
       /* 6 is used by nil */
       return 7;
+    case MRB_TT_ARRAY:
+      return 8;
     default:
       mrb_raisef(mrb, E_ARGUMENT_ERROR,
                  "Given type %d is not supported in JavaScript!\n", t);
@@ -154,6 +157,24 @@ struct RProc* mruby_js_get_proc(mrb_state *mrb, mrb_value *argv, int idx)
                    1, &argv[idx]);
 
   return mrb_proc_ptr(argv[idx]);
+}
+
+mrb_int mruby_js_get_array_len(mrb_state *mrb, mrb_value *argv, int idx)
+{
+  if (mrb_type(argv[idx]) != MRB_TT_ARRAY) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an array!");
+  }
+
+  return RARRAY_LEN(argv[idx]);
+}
+
+mrb_value* mruby_js_get_array(mrb_state *mrb, mrb_value *argv, int idx)
+{
+  if (mrb_type(argv[idx]) != MRB_TT_ARRAY) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an array!");
+  }
+
+  return RARRAY_PTR(argv[idx]);
 }
 
 /* invoke proc from js side */

@@ -141,12 +141,8 @@ mergeInto(LibraryManager.library, {
     }
   },
 
-  js_invoke__deps: ['__js_fill_return_arg', '__js_fetch_field',
-                  '__js_fetch_object', '__js_invoke_using_new'],
-  js_invoke: function (mrb, this_value_p,
-                       func_handle,
-                       argv_p, argc,
-                       ret_p, type) {
+  js_invoke__deps: ['__js_fetch_object'],
+  __js_fetch_argument: function(mrb, argv_p, idx) {
     // TODO: add array passing support
     var TYPE_HANDLERS = {
       0: function() { return false; }, // MRB_TT_FALSE
@@ -171,15 +167,25 @@ mergeInto(LibraryManager.library, {
       }                         // MRB_TT_PROC
     };
 
-    var this_handler = TYPE_HANDLERS[_mruby_js_argument_type(mrb, this_value_p, 0)];
-    var this_value = this_handler(mrb, this_value_p, 0);
+    var handler = TYPE_HANDLERS[_mruby_js_argument_type(mrb, argv_p, idx)];
+    return handler(mrb, argv_p, idx);
+  },
 
+  js_invoke__deps: ['__js_fill_return_arg', '__js_fetch_field',
+                  '__js_fetch_object', '__js_invoke_using_new',
+                   '__js_fetch_argument', '__js_global_object'],
+  js_invoke: function (mrb, this_value_p,
+                       func_handle,
+                       argv_p, argc,
+                       ret_p, type) {
     var func = ___js_fetch_object(mrb, func_handle);
     if (typeof func !== 'function') {
       _mruby_js_name_error(mrb);
     }
+
+    var this_value = ___js_fetch_argument(mrb, this_value_p, 0);
     if (type !== 2) {
-      if (this_value === window) {
+      if (this_value === ___js_global_object()) {
         // ECMAScript 5 compatible calling convention
         this_value = undefined;
       }
@@ -187,8 +193,7 @@ mergeInto(LibraryManager.library, {
 
     var i = 0, args = [], type_handler;
     for (i = 0; i < argc; i++) {
-      type_handler = TYPE_HANDLERS[_mruby_js_argument_type(mrb, argv_p, i)];
-      args.push(type_handler(mrb, argv_p, i));
+      args.push(___js_fetch_argument(mrb, argv_p, i));
     }
 
     var val;

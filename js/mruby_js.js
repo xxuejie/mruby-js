@@ -97,9 +97,7 @@ mergeInto(LibraryManager.library, {
   },
 
   __js_fetch_field: function (base_object, name_p) {
-    if (base_object && (typeof base_object === 'object')) {
-      return base_object[Module['Pointer_stringify'](name_p)];
-    }
+    return base_object[Module['Pointer_stringify'](name_p)];
   },
 
   __js_invoke_using_new: function (func, args) {

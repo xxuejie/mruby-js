@@ -25,8 +25,8 @@ module MrubyJs
       get_func(name).invoke(*args)
     end
 
-    def call_constructor(name, *args)
-      get_func(name).invoke_constructor(*args)
+    def call_new(name, *args)
+      get_func(name).invoke_new(*args)
     end
 
     def call_with_this(name, this_value, *args)
@@ -67,7 +67,7 @@ module MrubyJs
       invoke_internal(0, *args)
     end
 
-    def invoke_constructor(*args)
+    def invoke_new(*args)
       invoke_internal(1, *args)
     end
 

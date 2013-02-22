@@ -28,6 +28,7 @@ extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
 extern void js_release_object(mrb_state *mrb, mrb_int handle);
 extern void js_create_array(mrb_state *mrb, mrb_value *arr_p,
                             int len, mrb_value *ret);
+extern void js_create_empty_object(mrb_state *mrb, mrb_value *ret);
 
 static struct RClass *mjs_mod;
 static struct RClass *js_obj_cls;
@@ -332,6 +333,24 @@ mrb_js_obj_set(mrb_state *mrb, mrb_value self)
   return mrb_nil_value();
 }
 
+static mrb_value
+mrb_js_obj_create(mrb_state *mrb, mrb_value self)
+{
+  mrb_value ret = mrb_nil_value();
+
+  js_create_empty_object(mrb, &ret);
+  return ret;
+}
+
+static mrb_value
+mrb_js_array_create(mrb_state *mrb, mrb_value self)
+{
+  mrb_value ret = mrb_nil_value();
+
+  js_create_array(mrb, NULL, -1, &ret);
+  return ret;
+}
+
 /*
  * Valid invoke types:
  * 0 - Normal function call
@@ -387,11 +406,14 @@ mrb_mruby_js_gem_init(mrb_state *mrb) {
   mrb_define_method(mrb, js_obj_cls, "set", mrb_js_obj_set, ARGS_REQ(2));
   mrb_define_method(mrb, js_obj_cls, "[]", mrb_js_obj_get, ARGS_REQ(1));
   mrb_define_method(mrb, js_obj_cls, "[]=", mrb_js_obj_set, ARGS_REQ(2));
+  mrb_define_class_method(mrb, js_obj_cls, "create", mrb_js_obj_create, ARGS_NONE());
 
   js_func_cls = mrb_define_class_under(mrb, mjs_mod, "JsFunction", js_obj_cls);
   mrb_define_method(mrb, js_func_cls, "invoke_internal", mrb_js_func_invoke_internal, ARGS_ANY());
 
   js_array_cls = mrb_define_class_under(mrb, mjs_mod, "JsArray", js_obj_cls);
+  mrb_define_class_method(mrb, js_array_cls, "create", mrb_js_array_create,
+                          ARGS_NONE());
 
   mrb_define_method(mrb, mrb->array_class, "toJsArray", mrb_array_tojs, ARGS_NONE());
 }

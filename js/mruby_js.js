@@ -275,9 +275,16 @@ mergeInto(LibraryManager.library, {
   js_create_array__deps: ['__js_fetch_argument', '__js_fill_return_arg'],
   js_create_array: function(mrb, arr_p, len, ret_p) {
     var ret = [], i;
-    for (i = 0; i < len; i++) {
-      ret.push(___js_fetch_argument(mrb, arr_p, i));
+    if ((arr_p !== 0) && (len !== -1)) {
+      for (i = 0; i < len; i++) {
+        ret.push(___js_fetch_argument(mrb, arr_p, i));
+      }
     }
     ___js_fill_return_arg(mrb, ret_p, ret, 0);
+  },
+
+  js_create_empty_object__deps: ['__js_fill_return_arg'],
+  js_create_empty_object: function(mrb, ret_p) {
+    ___js_fill_return_arg(mrb, ret_p, {}, 0);
   }
 });

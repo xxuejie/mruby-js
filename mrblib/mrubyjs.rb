@@ -101,3 +101,18 @@ class Proc
     self
   end
 end
+
+# NOTE: Actually Array#toJsArray can also be implemented like this,
+# it is implemented in C hoping for a little performance gain(there
+# may be not, maybe a profiling is needed later.)
+# On the other hand, we will need to use Hash#keys for Hash#toJsObject
+# anyway, so we just do this here for programmers' convenience
+class Hash
+  def toJsObject
+    o = MrubyJs::JsObject.create
+    self.each do |key, value|
+      o[key] = value
+    end
+    o
+  end
+end

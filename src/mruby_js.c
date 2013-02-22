@@ -21,7 +21,7 @@ extern void js_invoke(mrb_state *mrb, mrb_value *this_value,
                       mrb_value *argv, int argc,
                       mrb_value *ret, int type);
 extern void js_get_field(mrb_state *mrb, mrb_value *obj_p,
-                         const char *field_name_p, mrb_value *ret);
+                         mrb_value *field_p, mrb_value *ret);
 extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
 extern void js_release_object(mrb_state *mrb, mrb_int handle);
 
@@ -303,15 +303,12 @@ mrb_js_obj_initialize(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_js_obj_get(mrb_state *mrb, mrb_value self)
 {
-  char* name = NULL;
+  mrb_value field;
   mrb_value ret = mrb_nil_value();
 
-  mrb_get_args(mrb, "z", &name);
-  if (name == NULL) {
-    return mrb_nil_value();
-  }
+  mrb_get_args(mrb, "o", &field);
 
-  js_get_field(mrb, &self, name, &ret);
+  js_get_field(mrb, &self, &field, &ret);
   return ret;
 }
 

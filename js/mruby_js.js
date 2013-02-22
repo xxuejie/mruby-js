@@ -96,10 +96,6 @@ mergeInto(LibraryManager.library, {
     if (stack) Runtime.stackRestore(stack);
   },
 
-  __js_fetch_field: function (base_object, name_p) {
-    return base_object[Module['Pointer_stringify'](name_p)];
-  },
-
   __js_invoke_using_new: function (func, args) {
     // This function uses "new" operator to call JavaScript functions.
     // It is implemented in the following way for two reasons:
@@ -179,7 +175,7 @@ mergeInto(LibraryManager.library, {
     return handler(mrb, argv_p, idx);
   },
 
-  js_invoke__deps: ['__js_fill_return_arg', '__js_fetch_field',
+  js_invoke__deps: ['__js_fill_return_arg',
                   '__js_fetch_object', '__js_invoke_using_new',
                    '__js_fetch_argument', '__js_global_object'],
   js_invoke: function (mrb, this_value_p,
@@ -215,13 +211,13 @@ mergeInto(LibraryManager.library, {
     ___js_fill_return_arg(mrb, ret_p, val, 0);
   },
 
-  js_get_field__deps: ['__js_fill_return_arg', '__js_fetch_field',
-                       '__js_fetch_object'],
-  js_get_field: function (mrb, obj_p, field_name_p, ret_p) {
+  js_get_field__deps: ['__js_fill_return_arg', '__js_fetch_object',
+                       '__js_fetch_argument'],
+  js_get_field: function (mrb, obj_p, field_p, ret_p) {
     var handle = _mruby_js_get_object_handle(mrb, obj_p, 0);
-    var field = ___js_fetch_field(___js_fetch_object(mrb, handle),
-                                  field_name_p);
-    ___js_fill_return_arg(mrb, ret_p, field, obj_p);
+    var obj = ___js_fetch_object(mrb, handle);
+    var val = obj[___js_fetch_argument(mrb, field_p, 0)];
+    ___js_fill_return_arg(mrb, ret_p, val, obj_p);
   },
 
   js_get_root_object__deps: ['__js_global_object', '__js_fill_return_arg'],

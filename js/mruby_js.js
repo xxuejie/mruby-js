@@ -220,6 +220,15 @@ mergeInto(LibraryManager.library, {
     ___js_fill_return_arg(mrb, ret_p, val, obj_p);
   },
 
+  js_set_field__deps: ['__js_fetch_object', '__js_fetch_argument'],
+  js_set_field: function (mrb, obj_p, field_p, val_p) {
+    var handle = _mruby_js_get_object_handle(mrb, obj_p, 0);
+    var obj = ___js_fetch_object(mrb, handle);
+    var field = ___js_fetch_argument(mrb, field_p, 0);
+    var val = ___js_fetch_argument(mrb, val_p, 0);
+    obj[field] = val;
+  },
+
   js_get_root_object__deps: ['__js_global_object', '__js_fill_return_arg'],
   js_get_root_object: function (mrb, ret_p) {
     // Global object must be of object type, and has no parent.

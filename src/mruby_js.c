@@ -22,6 +22,8 @@ extern void js_invoke(mrb_state *mrb, mrb_value *this_value,
                       mrb_value *ret, int type);
 extern void js_get_field(mrb_state *mrb, mrb_value *obj_p,
                          mrb_value *field_p, mrb_value *ret);
+extern void js_set_field(mrb_state *mrb, mrb_value *obj_p,
+                         mrb_value *field_p, mrb_value *val_p);
 extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
 extern void js_release_object(mrb_state *mrb, mrb_int handle);
 
@@ -312,6 +314,17 @@ mrb_js_obj_get(mrb_state *mrb, mrb_value self)
   return ret;
 }
 
+static mrb_value
+mrb_js_obj_set(mrb_state *mrb, mrb_value self)
+{
+  mrb_value field, val;
+
+  mrb_get_args(mrb, "oo", &field, &val);
+
+  js_set_field(mrb, &self, &field, &val);
+  return mrb_nil_value();
+}
+
 /*
  * Valid invoke types:
  * 0 - Normal function call
@@ -355,6 +368,9 @@ mrb_mruby_js_gem_init(mrb_state *mrb) {
   js_obj_cls = mrb_define_class_under(mrb, mjs_mod, "JsObject", mrb->object_class);
   mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_obj_initialize, ARGS_REQ(1));
   mrb_define_method(mrb, js_obj_cls, "get", mrb_js_obj_get, ARGS_REQ(1));
+  mrb_define_method(mrb, js_obj_cls, "set", mrb_js_obj_set, ARGS_REQ(2));
+  mrb_define_method(mrb, js_obj_cls, "[]", mrb_js_obj_get, ARGS_REQ(1));
+  mrb_define_method(mrb, js_obj_cls, "[]=", mrb_js_obj_set, ARGS_REQ(2));
 
   js_func_cls = mrb_define_class_under(mrb, mjs_mod, "JsFunction", js_obj_cls);
   mrb_define_method(mrb, js_func_cls, "invoke_internal", mrb_js_func_invoke_internal, ARGS_ANY());

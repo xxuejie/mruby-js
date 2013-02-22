@@ -83,6 +83,16 @@ module MrubyJs
       invoke(key.to_s, *args)
     end
   end
+
+  class JsArray
+    def each(&block)
+      idx ,len = 0, self.length
+      while idx < len
+        block.call(self[idx])
+        idx += 1
+      end
+    end
+  end
 end
 
 class Proc

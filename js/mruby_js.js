@@ -54,13 +54,23 @@ mergeInto(LibraryManager.library, {
     return (diff < EPSILON);
   },
 
-  __js_fill_return_arg__deps: ['__js_add_object', '__js_is_floating_number'],
+  __js_is_array: function (val) {
+    return (typeof val !== 'undefined' &&
+            val && val.constructor === Array);
+  },
+
+  __js_fill_return_arg__deps: ['__js_add_object', '__js_is_floating_number',
+                               '__js_is_array'],
   __js_fill_return_arg: function (mrb, ret_p, val, parent_p) {
     var stack = 0;
     var RETURN_HANDLERS = {
       'object': function () {
         var handle = ___js_add_object(mrb, val);
-        _mruby_js_set_object_handle(mrb, ret_p, handle);
+        if (___js_is_array(val)) {
+          _mruby_js_set_array_handle(mrb, ret_p, handle);
+        } else {
+          _mruby_js_set_object_handle(mrb, ret_p, handle);
+        }
       },
       'function': function () {
         var handle = ___js_add_object(mrb, val);

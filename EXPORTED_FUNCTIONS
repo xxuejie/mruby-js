@@ -14,4 +14,5 @@ mruby_js_set_boolean
 mruby_js_set_nil
 mruby_js_set_string
 mruby_js_set_object_handle
+mruby_js_set_array_handle
 mruby_js_set_function_handle

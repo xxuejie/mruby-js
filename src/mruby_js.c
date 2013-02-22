@@ -30,6 +30,7 @@ extern void js_release_object(mrb_state *mrb, mrb_int handle);
 static struct RClass *mjs_mod;
 static struct RClass *js_obj_cls;
 static struct RClass *js_func_cls;
+static struct RClass *js_array_cls;
 
 /* Object handle is stored as RData in mruby to leverage auto-dfree calls,
  * in other words, we are simulating finalizers here.
@@ -139,11 +140,6 @@ mrb_int mruby_js_get_object_handle(mrb_state *mrb, mrb_value *argv, int idx)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an object!");
   }
 
-  /* currently we only support passing objects of JsObject type */
-  if (mrb_object(argv[idx])->c != js_obj_cls) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "Object argument must be JsObject type!");
-  }
-
   return mruby_js_get_object_handle_value(mrb, argv[idx]);
 }
 
@@ -233,6 +229,19 @@ void mruby_js_set_object_handle(mrb_state *mrb, mrb_value *arg, mrb_int handle)
 
   if (ttype == 0) ttype = MRB_TT_OBJECT;
   o = (struct RObject*)mrb_obj_alloc(mrb, ttype, js_obj_cls);
+  *arg = mrb_obj_value(o);
+  argv = mrb_fixnum_value(handle);
+  mrb_funcall_argv(mrb, *arg, mrb->init_sym, 1, &argv);
+}
+
+void mruby_js_set_array_handle(mrb_state *mrb, mrb_value *arg, mrb_int handle)
+{
+  struct RObject *o;
+  enum mrb_vtype ttype = MRB_INSTANCE_TT(js_array_cls);
+  mrb_value argv;
+
+  if (ttype == 0) ttype = MRB_TT_OBJECT;
+  o = (struct RObject*)mrb_obj_alloc(mrb, ttype, js_array_cls);
   *arg = mrb_obj_value(o);
   argv = mrb_fixnum_value(handle);
   mrb_funcall_argv(mrb, *arg, mrb->init_sym, 1, &argv);
@@ -374,6 +383,8 @@ mrb_mruby_js_gem_init(mrb_state *mrb) {
 
   js_func_cls = mrb_define_class_under(mrb, mjs_mod, "JsFunction", js_obj_cls);
   mrb_define_method(mrb, js_func_cls, "invoke_internal", mrb_js_func_invoke_internal, ARGS_ANY());
+
+  js_array_cls = mrb_define_class_under(mrb, mjs_mod, "JsArray", js_obj_cls);
 }
 
 void

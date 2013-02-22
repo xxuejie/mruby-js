@@ -81,8 +81,8 @@ mergeInto(LibraryManager.library, {
       },
       'string': function () {
         if (!stack) stack = Runtime.stackSave();
-        var ret = Runtime.stackAlloc(val.length);
-        writeArrayToMemory(val, ret);
+        var ret = Runtime.stackAlloc(val.length + 1);
+        writeStringToMemory(val, ret);
         _mruby_js_set_string(mrb, ret_p, ret);
       }
     };

@@ -96,6 +96,8 @@ int mruby_js_argument_type(mrb_state *mrb, mrb_value *argv, int idx)
       return 7;
     case MRB_TT_ARRAY:
       return 8;
+    case MRB_TT_HASH:
+      return 9;
     default:
       mrb_raisef(mrb, E_ARGUMENT_ERROR,
                  "Given type %d is not supported in JavaScript!\n", t);
@@ -172,6 +174,20 @@ mrb_int mruby_js_get_array_handle(mrb_state *mrb, mrb_value *argv, int idx)
                               0, NULL);
 
   return mruby_js_get_object_handle(mrb, &js_array, 0);
+}
+
+mrb_int mruby_js_get_hash_handle(mrb_state *mrb, mrb_value *argv, int idx)
+{
+  mrb_value js_object;
+
+  if (mrb_type(argv[idx]) != MRB_TT_HASH) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not a hash!");
+  }
+
+  js_object = mrb_funcall_argv(mrb, argv[idx], mrb_intern(mrb, "toJsObject"),
+                               0, NULL);
+
+  return mruby_js_get_object_handle(mrb, &js_object, 0);
 }
 
 /* invoke proc from js side */

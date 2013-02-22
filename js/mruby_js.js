@@ -170,14 +170,8 @@ mergeInto(LibraryManager.library, {
         };
       },                        // MRB_TT_PROC
       8: function() {
-        var ret = [], i;
-        var len = _mruby_js_get_array_len.apply(null, arguments);
-        var mrb_array_p = _mruby_js_get_array.apply(null, arguments);
-
-        for (i = 0; i < len; i++) {
-          ret.push(___js_fetch_argument(mrb, mrb_array_p, i));
-        }
-        return ret;
+        var handle = _mruby_js_get_array_handle.apply(null, arguments);
+        return ___js_fetch_object(mrb, handle);
       }                         // MRB_TT_ARRAY
     };
 
@@ -277,4 +271,13 @@ mergeInto(LibraryManager.library, {
       }
     }
   },
+
+  js_create_array__deps: ['__js_fetch_argument', '__js_fill_return_arg'],
+  js_create_array: function(mrb, arr_p, len, ret_p) {
+    var ret = [], i;
+    for (i = 0; i < len; i++) {
+      ret.push(___js_fetch_argument(mrb, arr_p, i));
+    }
+    ___js_fill_return_arg(mrb, ret_p, ret, 0);
+  }
 });

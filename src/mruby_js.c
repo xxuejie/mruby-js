@@ -26,6 +26,8 @@ extern void js_set_field(mrb_state *mrb, mrb_value *obj_p,
                          mrb_value *field_p, mrb_value *val_p);
 extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
 extern void js_release_object(mrb_state *mrb, mrb_int handle);
+extern void js_create_array(mrb_state *mrb, mrb_value *arr_p,
+                            int len, mrb_value *ret);
 
 static struct RClass *mjs_mod;
 static struct RClass *js_obj_cls;
@@ -157,22 +159,18 @@ struct RProc* mruby_js_get_proc(mrb_state *mrb, mrb_value *argv, int idx)
   return mrb_proc_ptr(argv[idx]);
 }
 
-mrb_int mruby_js_get_array_len(mrb_state *mrb, mrb_value *argv, int idx)
+mrb_int mruby_js_get_array_handle(mrb_state *mrb, mrb_value *argv, int idx)
 {
+  mrb_value js_array;
+
   if (mrb_type(argv[idx]) != MRB_TT_ARRAY) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an array!");
   }
 
-  return RARRAY_LEN(argv[idx]);
-}
+  js_array = mrb_funcall_argv(mrb, argv[idx], mrb_intern(mrb, "toJsArray"),
+                              0, NULL);
 
-mrb_value* mruby_js_get_array(mrb_state *mrb, mrb_value *argv, int idx)
-{
-  if (mrb_type(argv[idx]) != MRB_TT_ARRAY) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an array!");
-  }
-
-  return RARRAY_PTR(argv[idx]);
+  return mruby_js_get_object_handle(mrb, &js_array, 0);
 }
 
 /* invoke proc from js side */
@@ -369,6 +367,15 @@ mrb_js_func_invoke_internal(mrb_state *mrb, mrb_value func)
   return ret;
 }
 
+static mrb_value
+mrb_array_tojs(mrb_state *mrb, mrb_value arr)
+{
+  mrb_value ret = mrb_nil_value();
+
+  js_create_array(mrb, RARRAY_PTR(arr), RARRAY_LEN(arr), &ret);
+  return ret;
+}
+
 void
 mrb_mruby_js_gem_init(mrb_state *mrb) {
   mjs_mod = mrb_define_module(mrb, "MrubyJs");
@@ -385,6 +392,8 @@ mrb_mruby_js_gem_init(mrb_state *mrb) {
   mrb_define_method(mrb, js_func_cls, "invoke_internal", mrb_js_func_invoke_internal, ARGS_ANY());
 
   js_array_cls = mrb_define_class_under(mrb, mjs_mod, "JsArray", js_obj_cls);
+
+  mrb_define_method(mrb, mrb->array_class, "toJsArray", mrb_array_tojs, ARGS_NONE());
 }
 
 void

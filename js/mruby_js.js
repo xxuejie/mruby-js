@@ -178,7 +178,11 @@ mergeInto(LibraryManager.library, {
       9: function() {
         var handle = _mruby_js_get_hash_handle.apply(null, arguments);
         return ___js_fetch_object(mrb, handle);
-      }                         // MRB_TT_HASH
+      },                        // MRB_TT_HASH
+      10: function() {
+        var str_p = _mruby_js_get_symbol.apply(null, arguments);
+        return Module['Pointer_stringify'](str_p);
+      }                         // MRB_TT_SYMBOL
     };
 
     var handler = TYPE_HANDLERS[_mruby_js_argument_type(mrb, argv_p, idx)];

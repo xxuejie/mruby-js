@@ -116,6 +116,8 @@ mergeInto(LibraryManager.library, {
     // So we will use the old-fashioned way to do this:)
 
     switch(args.length) {
+      case 0:
+        return new func();
       case 1:
         return new func(args[0]);
       case 2:

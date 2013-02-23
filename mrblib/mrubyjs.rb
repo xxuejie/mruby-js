@@ -116,3 +116,10 @@ class Hash
     o
   end
 end
+
+class Symbol
+  def to_proc
+    sym = self
+    Proc.new { |*args| send(sym, *args) }
+  end
+end

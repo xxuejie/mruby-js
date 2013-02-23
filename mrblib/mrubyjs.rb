@@ -41,15 +41,19 @@ module MrubyJs
 
     # For methods that do not conflict with Ruby, we can directly
     # call them or fetch them, the following rules are used:
-    # 1. If args is an empty array, we will fetch the field
-    # 2. If args is not empty, we will fetch the function and make the call
+    # 1. If key is of format "field=", we will set the field with given arguments
+    # 2. If args is an empty array, we will fetch the field
+    # 3. If args is not empty, we will fetch the function and make the call
     # Our solution here only covers the most common cases, users
     # will need to explicitly use call or get for other rare cases
     def method_missing(key, *args)
-      if args.length > 0
-        call(key.to_s, *args)
+      key = key.to_s
+      if key[-1] == '='
+        # This is a set method
+        set(key[0..-2], *args)
       else
-        get(key.to_s)
+        return call(key, *args) if args.length > 0
+        get(key)
       end
     end
   end

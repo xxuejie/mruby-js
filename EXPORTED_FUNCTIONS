@@ -1,12 +1,13 @@
 mruby_js_argument_type
+mruby_js_convert_symbol_to_string
 mruby_js_get_array_handle
 mruby_js_get_float
 mruby_js_get_hash_handle
 mruby_js_get_integer
 mruby_js_get_object_handle
 mruby_js_get_proc
-mruby_js_get_string
-mruby_js_get_symbol
+mruby_js_get_string_len
+mruby_js_get_string_ptr
 mruby_js_invoke_proc
 mruby_js_name_error
 mruby_js_set_array_handle

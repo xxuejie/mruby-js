@@ -160,8 +160,9 @@ mergeInto(LibraryManager.library, {
         return ___js_fetch_object(mrb, handle);
       },                        // MRB_TT_OBJECT
       5: function() {
-        var str_p = _mruby_js_get_string.apply(null, arguments);
-        return Module['Pointer_stringify'](str_p);
+        var str_len = _mruby_js_get_string_len.apply(null, arguments);
+        var str_p = _mruby_js_get_string_ptr.apply(null, arguments);
+        return Module['Pointer_stringify'](str_p, str_len);
       },                        // MRB_TT_STRING
       6: function() { return undefined; }, // nil value
       7: function() {
@@ -180,8 +181,8 @@ mergeInto(LibraryManager.library, {
         return ___js_fetch_object(mrb, handle);
       },                        // MRB_TT_HASH
       10: function() {
-        var str_p = _mruby_js_get_symbol.apply(null, arguments);
-        return Module['Pointer_stringify'](str_p);
+        _mruby_js_convert_symbol_to_string.apply(null, arguments);
+        return TYPE_HANDLERS[5].apply(null, arguments);
       }                         // MRB_TT_SYMBOL
     };
 

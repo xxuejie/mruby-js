@@ -108,20 +108,21 @@ int mruby_js_argument_type(mrb_state *mrb, mrb_value *argv, int idx)
   return -1;
 }
 
-char* mruby_js_get_string(mrb_state *mrb, mrb_value *argv, int idx)
+mrb_int mruby_js_get_string_len(mrb_state *mrb, mrb_value *argv, int idx)
 {
   struct RString *s;
-  /* TODO: well, let's come back to the auto-conversion later,
-   * since that involves changing the mruby_js_argument_type function
-   * as well.
-   */
+  /* This comes in pair with mruby_js_get_string_ptr, skip type check here */
+  s = mrb_str_ptr(argv[idx]);
+  return s->len;
+}
+
+char* mruby_js_get_string_ptr(mrb_state *mrb, mrb_value *argv, int idx)
+{
+  struct RString *s;
   if (mrb_type(argv[idx]) != MRB_TT_STRING) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not a string!");
   }
   s = mrb_str_ptr(argv[idx]);
-  if (strlen(s->ptr) != s->len) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "String contains NULL!");
-  }
   return s->ptr;
 }
 
@@ -192,7 +193,7 @@ mrb_int mruby_js_get_hash_handle(mrb_state *mrb, mrb_value *argv, int idx)
   return mruby_js_get_object_handle(mrb, &js_object, 0);
 }
 
-char* mruby_js_get_symbol(mrb_state *mrb, mrb_value *argv, int idx)
+void mruby_js_convert_symbol_to_string(mrb_state *mrb, mrb_value *argv, int idx)
 {
   mrb_value str;
 
@@ -202,8 +203,11 @@ char* mruby_js_get_symbol(mrb_state *mrb, mrb_value *argv, int idx)
 
   str = mrb_funcall_argv(mrb, argv[idx], mrb_intern(mrb, "to_s"),
                          0, NULL);
+  if (mrb_type(str) != MRB_TT_STRING) {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "Failed to convert symbol to string!");
+  }
 
-  return mruby_js_get_string(mrb, &str, 0);
+  argv[idx] = str;
 }
 
 /* invoke proc from js side */

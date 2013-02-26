@@ -147,9 +147,8 @@ mergeInto(LibraryManager.library, {
     }
   },
 
-  __js_fetch_argument__deps: ['__js_fetch_object'],
+  __js_fetch_argument__deps: ['__js_fetch_object', '__js_fill_return_arg'],
   __js_fetch_argument: function(mrb, argv_p, idx) {
-    // TODO: add array passing support
     var TYPE_HANDLERS = {
       0: function() { return false; }, // MRB_TT_FALSE
       1: function() { return true; },  // MRB_TT_TRUE
@@ -168,8 +167,23 @@ mergeInto(LibraryManager.library, {
       7: function() {
         var proc = _mruby_js_get_proc.apply(null, arguments);
         return function() {
-          // TODO: add argument passing support
-          _mruby_js_invoke_proc(mrb, proc, 0, 0);
+          // Callback arguments
+          var cargc = arguments.length;
+          var cargv = 0;
+          if (cargc > 0) {
+            var i;
+            cargv = _mruby_js_invoke_alloc_argv(mrb, cargc);
+            for (i = 0; i < cargc; i++) {
+              ___js_fill_return_arg(mrb,
+                                    _mruby_js_invoke_fetch_argp(mrb, cargv, i),
+                                    arguments[i], 0);
+            }
+          }
+
+          _mruby_js_invoke_proc(mrb, proc, cargc, cargv);
+          if (cargc > 0) {
+            _mruby_js_invoke_release_argv(mrb, cargv);
+          }
         };
       },                        // MRB_TT_PROC
       8: function() {

@@ -8,7 +8,10 @@ mruby_js_get_object_handle
 mruby_js_get_proc
 mruby_js_get_string_len
 mruby_js_get_string_ptr
+mruby_js_invoke_alloc_argv
+mruby_js_invoke_fetch_argp
 mruby_js_invoke_proc
+mruby_js_invoke_release_argv
 mruby_js_name_error
 mruby_js_set_array_handle
 mruby_js_set_boolean

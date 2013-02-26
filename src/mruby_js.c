@@ -210,6 +210,22 @@ void mruby_js_convert_symbol_to_string(mrb_state *mrb, mrb_value *argv, int idx)
   argv[idx] = str;
 }
 
+/* Invoke helper functions */
+mrb_value* mruby_js_invoke_alloc_argv(mrb_state *mrb, int argc)
+{
+  return (mrb_value*) malloc(argc * sizeof(mrb_value));
+}
+
+mrb_value* mruby_js_invoke_fetch_argp(mrb_state *mrb, mrb_value* argv, int idx)
+{
+  return &argv[idx];
+}
+
+void mruby_js_invoke_release_argv(mrb_state *mrb, mrb_value* argv)
+{
+  free(argv);
+}
+
 /* invoke proc from js side */
 void mruby_js_invoke_proc(mrb_state *mrb, struct RProc *proc,
                           int argc, mrb_value *argv)
@@ -221,6 +237,7 @@ void mruby_js_invoke_proc(mrb_state *mrb, struct RProc *proc,
     mrb_p(mrb, mrb_obj_value(mrb->exc));
   }
 
+  /* Only for statistics and GC purpose */
   mrb_funcall_argv(mrb, mrb_obj_value(mjs_mod),
                    mrb_intern(mrb, "call_proc"),
                    1, &p);

@@ -2,7 +2,11 @@ This is the mrbgem for calling JavaScript from mruby. It is primarily created to
 
 This project is distributed under the MIT License. See LICENSE for further details.
 
-#TODO
+#Features
 
-1. Array handling(should we processes all items at once or should we use similar techniques as objects which keep the actual items only at JS side?)
-2. Function argument(easy to handle just like objects, but should we allow Procs as functions? should we allow JS function creation in mruby?)
+* Fetch JS numbers, strings, arrays, objects and functions
+* Use either '.' syntax or '[]' syntax to retrieve fields in a JS object
+* Perform JS Function call using normal method, new method or method with specified this value
+* Auto conversion from Ruby arrays to JS arrays, and Ruby hashes to JS objects
+* Use `method_missing` to expose JS functions to Ruby
+* Use Ruby procs as JS callback functions, you can even pass JS values as arguments to the Ruby procs!

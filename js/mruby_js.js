@@ -51,7 +51,7 @@ mergeInto(LibraryManager.library, {
     var diff = Math.abs(fixed - val);
     var EPSILON = 1e-5;
 
-    return (diff < EPSILON);
+    return (diff >= EPSILON);
   },
 
   __js_is_array: function (val) {

@@ -46,12 +46,13 @@ module MrubyJs
     # 3. If args is not empty, we will fetch the function and make the call
     # Our solution here only covers the most common cases, users
     # will need to explicitly use call or get for other rare cases
-    def method_missing(key, *args)
+    def method_missing(key, *args, &block)
       key = key.to_s
       if key[-1] == '='
         # This is a set method
         set(key[0..-2], *args)
       else
+        args.push(Proc.new(&block)) if block
         return call(key, *args) if args.length > 0
         get(key)
       end

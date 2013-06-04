@@ -137,11 +137,11 @@ class Symbol
   # solution 2, but the default option will stays 1.
   # TODO: Since now Proc#arity is available, we maybe able to make
   # this process a little smoother.
-  def to_js_proc(num_args = -1)
+  def to_js_proc(obj, num_args = -1)
     sym = self
     Proc.new do |*args|
       args = args[0, num_args] if (num_args != -1 && args.length > num_args)
-      send(sym, *args)
+      obj.send(sym, *args)
     end
   end
 end

@@ -2,7 +2,7 @@ This is the mrbgem for calling JavaScript from mruby. It is primarily created to
 
 This project is distributed under the MIT License. See LICENSE for further details.
 
-#Features
+##Features
 
 * Fetch JS numbers, strings, arrays, objects and functions
 * Use either '.' syntax or '[]' syntax to retrieve fields in a JS object
@@ -10,3 +10,7 @@ This project is distributed under the MIT License. See LICENSE for further detai
 * Auto conversion from Ruby arrays to JS arrays, and Ruby hashes to JS objects
 * Use `method_missing` to expose JS functions to Ruby
 * Use Ruby procs as JS callback functions, you can even pass JS values as arguments to the Ruby procs!
+
+##Build Status
+
+[![Build Status](https://drone.io/github.com/xxuejie/mruby-js/status.png)](https://drone.io/github.com/xxuejie/mruby-js/latest)

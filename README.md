@@ -13,4 +13,5 @@ This project is distributed under the MIT License. See LICENSE for further detai
 
 ##Build Status
 
+[![Build Status](https://travis-ci.org/xxuejie/mruby-js.png)](https://travis-ci.org/xxuejie/mruby-js)
 [![Build Status](https://drone.io/github.com/xxuejie/mruby-js/status.png)](https://drone.io/github.com/xxuejie/mruby-js/latest)

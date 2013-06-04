@@ -1,8 +1,7 @@
-env:
-  - LLVM=/usr/lib/llvm-3.2/bin
-  - EMSCRIPTEN_DIR=/home/travis/build/xxuejie/mruby-js/webruby/modules/emscripten
-  - BUILD_CONFIG=/home/travis/build/xxuejie/mruby-js/config/test_config.rb
 before_install:
+  - export LLVM=/usr/lib/llvm-3.2/bin
+  - export EMSCRIPTEN_DIR=/home/travis/build/xxuejie/mruby-js/webruby/modules/emscripten
+  - export BUILD_CONFIG=/home/travis/build/xxuejie/mruby-js/config/test_config.rb
   - sudo add-apt-repository ppa:h-rayflood/llvm -y
   - sudo apt-get update -y
   - sudo apt-get install llvm-3.2 clang-3.2 -y

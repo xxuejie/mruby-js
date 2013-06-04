@@ -228,13 +228,18 @@ void mruby_js_invoke_release_argv(mrb_state *mrb, mrb_value* argv)
 
 /* invoke proc from js side */
 void mruby_js_invoke_proc(mrb_state *mrb, struct RProc *proc,
-                          int argc, mrb_value *argv)
+                          int argc, mrb_value *argv, mrb_value* retp)
 {
   mrb_value p = mrb_obj_value(proc);
+  mrb_value ret = mrb_nil_value();
 
-  mrb_yield_argv(mrb, p, argc, argv);
+  ret = mrb_yield_argv(mrb, p, argc, argv);
   if (mrb->exc) {
     mrb_p(mrb, mrb_obj_value(mrb->exc));
+  }
+
+  if (retp) {
+    *retp = ret;
   }
 
   /* Only for statistics and GC purpose */

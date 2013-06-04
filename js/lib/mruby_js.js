@@ -170,6 +170,8 @@ mergeInto(LibraryManager.library, {
           // Callback arguments
           var cargc = arguments.length;
           var cargv = 0;
+          var retp = 0;
+          var ret;
           if (cargc > 0) {
             var i;
             cargv = _mruby_js_invoke_alloc_argv(mrb, cargc);
@@ -179,11 +181,18 @@ mergeInto(LibraryManager.library, {
                                     arguments[i], 0);
             }
           }
+          retp = _mruby_js_invoke_alloc_argv(mrb, 1);
 
-          _mruby_js_invoke_proc(mrb, proc, cargc, cargv);
+          _mruby_js_invoke_proc(mrb, proc, cargc, cargv, retp);
+          ret = ___js_fetch_argument(mrb, retp, 0);
+
           if (cargc > 0) {
             _mruby_js_invoke_release_argv(mrb, cargv);
           }
+          if (retp) {
+            _mruby_js_invoke_release_argv(mrb, retp);
+          }
+          return ret;
         };
       },                        // MRB_TT_PROC
       8: function() {

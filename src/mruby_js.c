@@ -364,6 +364,12 @@ mrb_js_obj_initialize(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_js_obj_handle(mrb_state *mrb, mrb_value self)
+{
+  return mrb_fixnum_value(mruby_js_get_object_handle_value(mrb, self));
+}
+
+static mrb_value
 mrb_js_obj_get(mrb_state *mrb, mrb_value self)
 {
   mrb_value field;
@@ -457,6 +463,8 @@ mrb_mruby_js_gem_init(mrb_state *mrb) {
 
   js_obj_cls = mrb_define_class_under(mrb, mjs_mod, "JsObject", mrb->object_class);
   mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_obj_initialize, ARGS_REQ(1));
+  /* only for testing use */
+  mrb_define_method(mrb, js_obj_cls, "handle", mrb_js_obj_handle, ARGS_NONE());
   mrb_define_method(mrb, js_obj_cls, "get", mrb_js_obj_get, ARGS_REQ(1));
   mrb_define_method(mrb, js_obj_cls, "set", mrb_js_obj_set, ARGS_REQ(2));
   mrb_define_method(mrb, js_obj_cls, "[]", mrb_js_obj_get, ARGS_REQ(1));

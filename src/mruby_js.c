@@ -260,7 +260,7 @@ void mruby_js_set_integer(mrb_state *mrb, mrb_value *arg, mrb_int val)
 
 void mruby_js_set_float(mrb_state *mrb, mrb_value *arg, mrb_float val)
 {
-  *arg = mrb_float_value(val);
+  *arg = mrb_float_value(mrb, val);
 }
 
 void mruby_js_set_boolean(mrb_state *mrb, mrb_value *arg, int val)

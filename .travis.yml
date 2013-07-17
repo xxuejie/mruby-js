@@ -10,7 +10,7 @@ before_install:
   # Lets emcc sets up the environment
   - ./modules/emscripten/emcc
   - gem build webruby.gemspec
-  - gem install --no-ri --no-rdoc ./webruby-0.1.0.gem
+  - gem install --no-ri --no-rdoc ./webruby-0.1.1.gem
   - cd ..
   # create sample project
   - webruby new SampleProject

@@ -8,7 +8,6 @@ before_install:
   - cd webruby
   - git submodule update --init
   # Lets emcc sets up the environment
-  - ./modules/emscripten/emcc
   - gem build webruby.gemspec
   - gem install --no-ri --no-rdoc ./webruby-0.1.1.gem
   - cd ..
@@ -18,4 +17,4 @@ before_install:
   - echo "Webruby::App.setup { |c| c.gem \"/home/travis/build/xxuejie/mruby-js\" }" >> Rakefile
   # Just copy-paste version of fix from https://github.com/travis-ci/travis-cookbooks/issues/155
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
-script: "rake mrbtest"
+script: "rake && rake mrbtest"

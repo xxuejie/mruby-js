@@ -280,41 +280,20 @@ void mruby_js_set_string(mrb_state *mrb, mrb_value *arg, const char *val)
 
 void mruby_js_set_object_handle(mrb_state *mrb, mrb_value *arg, mrb_int handle)
 {
-  struct RObject *o;
-  enum mrb_vtype ttype = MRB_INSTANCE_TT(js_obj_cls);
-  mrb_value argv;
-
-  if (ttype == 0) ttype = MRB_TT_OBJECT;
-  o = (struct RObject*)mrb_obj_alloc(mrb, ttype, js_obj_cls);
-  *arg = mrb_obj_value(o);
-  argv = mrb_fixnum_value(handle);
-  mrb_funcall_argv(mrb, *arg, mrb->init_sym, 1, &argv);
+  mrb_value argv = mrb_fixnum_value(handle);
+  *arg = mrb_obj_new(mrb, js_obj_cls, 1, &argv);
 }
 
 void mruby_js_set_array_handle(mrb_state *mrb, mrb_value *arg, mrb_int handle)
 {
-  struct RObject *o;
-  enum mrb_vtype ttype = MRB_INSTANCE_TT(js_array_cls);
-  mrb_value argv;
-
-  if (ttype == 0) ttype = MRB_TT_OBJECT;
-  o = (struct RObject*)mrb_obj_alloc(mrb, ttype, js_array_cls);
-  *arg = mrb_obj_value(o);
-  argv = mrb_fixnum_value(handle);
-  mrb_funcall_argv(mrb, *arg, mrb->init_sym, 1, &argv);
+  mrb_value argv = mrb_fixnum_value(handle);
+  *arg = mrb_obj_new(mrb, js_array_cls, 1, &argv);
 }
 
 void mruby_js_set_function_handle(mrb_state *mrb, mrb_value *arg,
                                   mrb_int handle, mrb_value *parent)
 {
-  struct RObject *o;
-  enum mrb_vtype ttype = MRB_INSTANCE_TT(js_func_cls);
   mrb_value argv[2];
-
-  if (ttype == 0) ttype = MRB_TT_OBJECT;
-  o = (struct RObject*)mrb_obj_alloc(mrb, ttype, js_func_cls);
-  *arg = mrb_obj_value(o);
-
   argv[0] = mrb_fixnum_value(handle);
   if (parent != NULL) {
     argv[1] = *parent;
@@ -322,7 +301,7 @@ void mruby_js_set_function_handle(mrb_state *mrb, mrb_value *arg,
     argv[1] = mrb_nil_value();
   }
 
-  mrb_funcall_argv(mrb, *arg, mrb->init_sym, 2, argv);
+  *arg = mrb_obj_new(mrb, js_func_cls, 2, argv);
 }
 
 /* mrb functions */

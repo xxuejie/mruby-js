@@ -21,3 +21,5 @@ mruby_js_set_integer
 mruby_js_set_nil
 mruby_js_set_object_handle
 mruby_js_set_string
+mrb_gc_arena_save
+mrb_gc_arena_restore

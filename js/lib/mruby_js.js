@@ -174,6 +174,7 @@ mergeInto(LibraryManager.library, {
       7: function() {
         var proc = _mruby_js_get_proc.apply(null, arguments);
         return function() {
+          var arena = _mrb_gc_arena_save(mrb);
           // Callback arguments
           var cargc = arguments.length;
           var cargv = 0;
@@ -199,6 +200,8 @@ mergeInto(LibraryManager.library, {
           if (retp) {
             _mruby_js_invoke_release_argv(mrb, retp);
           }
+
+          _mrb_gc_arena_restore(mrb, arena);
           return ret;
         };
       },                        // MRB_TT_PROC

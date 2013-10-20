@@ -131,3 +131,9 @@ assert('call function with proc and args') do
   test.func_proc_with_arg(Proc.new { |a, b| a == 19 && b == 'zzz' },
                           [19, 'zzz'])
 end
+
+assert('_mruby_js* fields are not present in js objects') do
+  test = MrubyJs.global.get("MRB_JS_TEST")
+
+  test.func_mruby_fields({:aaa => 3})
+end

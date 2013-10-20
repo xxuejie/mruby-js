@@ -88,4 +88,12 @@
   test['func_proc_with_arg'] = function(p, args) {
     return p.apply(this, args);
   }
+  test['func_mruby_fields'] = function(o) {
+    for (var i in o) {
+      if ((i === '_mruby_js_id') || (i === '_mruby_js_count')) {
+        return false;
+      }
+    }
+    return true;
+  }
 }) ();

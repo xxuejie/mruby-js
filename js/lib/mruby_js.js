@@ -33,8 +33,15 @@ mergeInto(LibraryManager.library, {
       }
       cache_object[new_id] = obj;
 
-      obj["_mruby_js_id"] = new_id;
-      obj["_mruby_js_count"] = 1;
+      if (Object.defineProperty) {
+        Object.defineProperty(obj, "_mruby_js_id",
+                              {enumerable : false, value: new_id});
+        Object.defineProperty(obj, "_mruby_js_count",
+                              {enumerable : false, value: 1});
+      } else {
+        obj["_mruby_js_id"] = new_id;
+        obj["_mruby_js_count"] = 1;
+      }
 
       object_handle = new_id;
     } else {

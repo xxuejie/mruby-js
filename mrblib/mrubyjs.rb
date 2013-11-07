@@ -83,10 +83,6 @@ module MrubyJs
     def [](*args)
       invoke(*args)
     end
-
-    def method_missing(key, *args)
-      invoke(key.to_s, *args)
-    end
   end
 
   class JsArray

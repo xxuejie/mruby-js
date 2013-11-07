@@ -137,3 +137,9 @@ assert('_mruby_js* fields are not present in js objects') do
 
   test.func_mruby_fields({:aaa => 3})
 end
+
+assert('call function which is a property of another function') do
+  test = MrubyJs.global.get("MRB_JS_TEST")
+
+  test.func_on_func.second(12345) == 12345
+end

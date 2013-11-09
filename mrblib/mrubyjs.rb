@@ -20,6 +20,13 @@ module MrubyJs
     end
   end
 
+  def self.setup_global
+    Kernel.define_method(:window) do
+      MrubyJs.window
+    end
+    Kernel.alias_method(:global, :window)
+  end
+
   class JsObject
     def call(name, *args)
       get_func(name).invoke(*args)

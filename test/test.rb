@@ -30,7 +30,7 @@ assert('get JavaScript object') do
   test = MrubyJs.global.get("MRB_JS_TEST")
 
   obj = test.field_object
-  assert_true obj.instance_of?(MrubyJs::JsObject)
+  assert_kind_of MrubyJs::JsObject, obj
   assert_equal 1, obj.a
   assert_float 1.2, obj.b
   assert_equal "String", obj.c
@@ -40,7 +40,7 @@ assert('get JavaScript array') do
   test = MrubyJs.global.get("MRB_JS_TEST")
 
   arr = test.field_array
-  assert_true arr.instance_of?(MrubyJs::JsArray)
+  assert_kind_of MrubyJs::JsArray, arr
   assert_equal 3, arr.length
   assert_equal "a", arr[0]
   assert_nil arr[1]
@@ -51,18 +51,18 @@ assert('get recursive JavaScript object') do
   test = MrubyJs.global.get("MRB_JS_TEST")
 
   obj = test.field_recursive_object
-  assert_true obj.instance_of?(MrubyJs::JsObject)
+  assert_kind_of MrubyJs::JsObject, obj
 
   sub_obj = obj.obj
-  assert_true sub_obj.instance_of?(MrubyJs::JsObject)
+  assert_kind_of MrubyJs::JsObject, sub_obj
   assert_true sub_obj.a
 
   sub_arr = obj.arr
-  assert_true sub_arr.instance_of?(MrubyJs::JsArray)
+  assert_kind_of MrubyJs::JsArray, sub_arr
   assert_equal 2, sub_arr.length
 
   sub_sub_arr = sub_arr[0]
-  assert_true sub_sub_arr.instance_of?(MrubyJs::JsArray)
+  assert_kind_of MrubyJs::JsArray, sub_sub_arr
   assert_equal 4, sub_sub_arr.length
   assert_equal 1, sub_sub_arr[0]
   assert_equal 2, sub_sub_arr[1]
@@ -70,7 +70,7 @@ assert('get recursive JavaScript object') do
   assert_equal 4, sub_sub_arr[3]
 
   sub_sub_obj = sub_arr[1]
-  assert_true sub_sub_obj.instance_of?(MrubyJs::JsObject)
+  assert_kind_of MrubyJs::JsObject, sub_sub_obj
   assert_equal "field", sub_sub_obj.val
 end
 

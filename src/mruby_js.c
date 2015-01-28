@@ -26,7 +26,7 @@ extern void js_set_field(mrb_state *mrb, mrb_value *obj_p,
                          mrb_value *field_p, mrb_value *val_p);
 extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
 extern void js_release_object(mrb_state *mrb, mrb_int handle);
-extern void js_create_array(mrb_state *mrb, mrb_value *arr_p,
+extern void js_create_array(mrb_state *mrb, const mrb_value *arr_p,
                             int len, mrb_value *ret);
 extern void js_create_empty_object(mrb_state *mrb, mrb_value *ret);
 
@@ -113,7 +113,7 @@ mrb_int mruby_js_get_string_len(mrb_state *mrb, mrb_value *argv, int idx)
   struct RString *s;
   /* This comes in pair with mruby_js_get_string_ptr, skip type check here */
   s = mrb_str_ptr(argv[idx]);
-  return s->len;
+  return RSTR_LEN(s);
 }
 
 char* mruby_js_get_string_ptr(mrb_state *mrb, mrb_value *argv, int idx)
@@ -123,7 +123,7 @@ char* mruby_js_get_string_ptr(mrb_state *mrb, mrb_value *argv, int idx)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not a string!");
   }
   s = mrb_str_ptr(argv[idx]);
-  return s->ptr;
+  return RSTR_PTR(s);
 }
 
 mrb_int mruby_js_get_integer(mrb_state *mrb, mrb_value *argv, int idx)

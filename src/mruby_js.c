@@ -441,28 +441,28 @@ mrb_array_tojs(mrb_state *mrb, mrb_value arr)
 void
 mrb_mruby_js_gem_init(mrb_state *mrb) {
   mjs_mod = mrb_define_module(mrb, "MrubyJs");
-  mrb_define_class_method(mrb, mjs_mod, "get_root_object", mrb_js_get_root_object, ARGS_NONE());
-  mrb_define_class_method(mrb, mjs_mod, "window", mrb_js_get_root_object, ARGS_NONE());
-  mrb_define_class_method(mrb, mjs_mod, "global", mrb_js_get_root_object, ARGS_NONE());
+  mrb_define_class_method(mrb, mjs_mod, "get_root_object", mrb_js_get_root_object, MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, mjs_mod, "window", mrb_js_get_root_object, MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, mjs_mod, "global", mrb_js_get_root_object, MRB_ARGS_NONE());
 
   js_obj_cls = mrb_define_class_under(mrb, mjs_mod, "JsObject", mrb->object_class);
-  mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_obj_initialize, ARGS_REQ(1));
+  mrb_define_method(mrb, js_obj_cls, "initialize", mrb_js_obj_initialize, MRB_ARGS_REQ(1));
   /* only for testing use */
-  mrb_define_method(mrb, js_obj_cls, "handle", mrb_js_obj_handle, ARGS_NONE());
-  mrb_define_method(mrb, js_obj_cls, "get", mrb_js_obj_get, ARGS_REQ(1));
-  mrb_define_method(mrb, js_obj_cls, "set", mrb_js_obj_set, ARGS_REQ(2));
-  mrb_define_method(mrb, js_obj_cls, "[]", mrb_js_obj_get, ARGS_REQ(1));
-  mrb_define_method(mrb, js_obj_cls, "[]=", mrb_js_obj_set, ARGS_REQ(2));
-  mrb_define_class_method(mrb, js_obj_cls, "create", mrb_js_obj_create, ARGS_NONE());
+  mrb_define_method(mrb, js_obj_cls, "handle", mrb_js_obj_handle, MRB_ARGS_NONE());
+  mrb_define_method(mrb, js_obj_cls, "get", mrb_js_obj_get, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, js_obj_cls, "set", mrb_js_obj_set, MRB_ARGS_REQ(2));
+  mrb_define_method(mrb, js_obj_cls, "[]", mrb_js_obj_get, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, js_obj_cls, "[]=", mrb_js_obj_set, MRB_ARGS_REQ(2));
+  mrb_define_class_method(mrb, js_obj_cls, "create", mrb_js_obj_create, MRB_ARGS_NONE());
 
   js_func_cls = mrb_define_class_under(mrb, mjs_mod, "JsFunction", js_obj_cls);
-  mrb_define_method(mrb, js_func_cls, "invoke_internal", mrb_js_func_invoke_internal, ARGS_ANY());
+  mrb_define_method(mrb, js_func_cls, "invoke_internal", mrb_js_func_invoke_internal, MRB_ARGS_ANY());
 
   js_array_cls = mrb_define_class_under(mrb, mjs_mod, "JsArray", js_obj_cls);
   mrb_define_class_method(mrb, js_array_cls, "create", mrb_js_array_create,
-                          ARGS_NONE());
+                          MRB_ARGS_NONE());
 
-  mrb_define_method(mrb, mrb->array_class, "toJsArray", mrb_array_tojs, ARGS_NONE());
+  mrb_define_method(mrb, mrb->array_class, "toJsArray", mrb_array_tojs, MRB_ARGS_NONE());
 }
 
 void

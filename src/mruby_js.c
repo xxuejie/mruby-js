@@ -17,7 +17,7 @@
 
 /* JS functions */
 extern void js_invoke(mrb_state *mrb, mrb_value *this_value,
-                      mrb_int func_handle,
+                      int func_handle,
                       mrb_value *argv, int argc,
                       mrb_value *ret, int type);
 extern void js_get_field(mrb_state *mrb, mrb_value *obj_p,
@@ -25,7 +25,7 @@ extern void js_get_field(mrb_state *mrb, mrb_value *obj_p,
 extern void js_set_field(mrb_state *mrb, mrb_value *obj_p,
                          mrb_value *field_p, mrb_value *val_p);
 extern void js_get_root_object(mrb_state *mrb, mrb_value *ret);
-extern void js_release_object(mrb_state *mrb, mrb_int handle);
+extern void js_release_object(mrb_state *mrb, int handle);
 extern void js_create_array(mrb_state *mrb, const mrb_value *arr_p,
                             int len, mrb_value *ret);
 extern void js_create_empty_object(mrb_state *mrb, mrb_value *ret);
@@ -41,7 +41,7 @@ static struct RClass *js_array_cls;
 static void
 mruby_js_object_handle_free(mrb_state *mrb, void *p)
 {
-  mrb_int *handle = (mrb_int*) p;
+  int *handle = (int*) p;
   if (handle) {
     js_release_object(mrb, *handle);
   }
@@ -55,11 +55,11 @@ static const struct mrb_data_type mruby_js_object_handle_type ={
 /* Gets the object handle value from a JsObject, it is put here since
  * mruby_js_set_object_handle uses this function.
  */
-static mrb_int
+static int
 mruby_js_get_object_handle_value(mrb_state *mrb, mrb_value js_obj)
 {
   mrb_value value_handle;
-  mrb_int *handle_p = NULL;
+  int *handle_p = NULL;
 
   value_handle = mrb_iv_get(mrb, js_obj, mrb_intern_cstr(mrb, "handle"));
   Data_Get_Struct(mrb, value_handle, &mruby_js_object_handle_type, handle_p);
@@ -142,7 +142,7 @@ mrb_float mruby_js_get_float(mrb_state *mrb, mrb_value *argv, int idx)
   return mrb_float(argv[idx]);
 }
 
-mrb_int mruby_js_get_object_handle(mrb_state *mrb, mrb_value *argv, int idx)
+int mruby_js_get_object_handle(mrb_state *mrb, mrb_value *argv, int idx)
 {
   if (mrb_type(argv[idx]) != MRB_TT_OBJECT) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Given argument is not an object!");
@@ -165,7 +165,7 @@ struct RProc* mruby_js_get_proc(mrb_state *mrb, mrb_value *argv, int idx)
   return mrb_proc_ptr(argv[idx]);
 }
 
-mrb_int mruby_js_get_array_handle(mrb_state *mrb, mrb_value *argv, int idx)
+int mruby_js_get_array_handle(mrb_state *mrb, mrb_value *argv, int idx)
 {
   mrb_value js_array;
 
@@ -179,7 +179,7 @@ mrb_int mruby_js_get_array_handle(mrb_state *mrb, mrb_value *argv, int idx)
   return mruby_js_get_object_handle(mrb, &js_array, 0);
 }
 
-mrb_int mruby_js_get_hash_handle(mrb_state *mrb, mrb_value *argv, int idx)
+int mruby_js_get_hash_handle(mrb_state *mrb, mrb_value *argv, int idx)
 {
   mrb_value js_object;
 
@@ -278,20 +278,20 @@ void mruby_js_set_string(mrb_state *mrb, mrb_value *arg, const char *val)
   *arg = mrb_str_new_cstr(mrb, val);
 }
 
-void mruby_js_set_object_handle(mrb_state *mrb, mrb_value *arg, mrb_int handle)
+void mruby_js_set_object_handle(mrb_state *mrb, mrb_value *arg, int handle)
 {
   mrb_value argv = mrb_fixnum_value(handle);
   *arg = mrb_obj_new(mrb, js_obj_cls, 1, &argv);
 }
 
-void mruby_js_set_array_handle(mrb_state *mrb, mrb_value *arg, mrb_int handle)
+void mruby_js_set_array_handle(mrb_state *mrb, mrb_value *arg, int handle)
 {
   mrb_value argv = mrb_fixnum_value(handle);
   *arg = mrb_obj_new(mrb, js_array_cls, 1, &argv);
 }
 
 void mruby_js_set_function_handle(mrb_state *mrb, mrb_value *arg,
-                                  mrb_int handle, mrb_value *parent)
+                                  int handle, mrb_value *parent)
 {
   mrb_value argv[2];
   argv[0] = mrb_fixnum_value(handle);
@@ -327,15 +327,15 @@ mrb_js_get_root_object(mrb_state *mrb, mrb_value mod)
 static mrb_value
 mrb_js_obj_initialize(mrb_state *mrb, mrb_value self)
 {
-  mrb_int handle = INVALID_HANDLE;
-  mrb_int *handle_p;
+  int handle = INVALID_HANDLE;
+  int *handle_p;
 
   mrb_get_args(mrb, "i", &handle);
   if (handle <= 0) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "No valid handle is provided!");
   }
 
-  handle_p = (mrb_int*) malloc(sizeof(mrb_int));
+  handle_p = (int*) malloc(sizeof(int));
   if (handle_p == NULL) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "Cannot allocate memory!");
   }
